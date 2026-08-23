@@ -99,6 +99,11 @@ import { showToast } from './ui/toast.js';
   let cloudUploadRunning = false;
   let cloudPendingRemote = null;
   let cloudDeviceId = null;
+  let cloudLastSyncedAt = null;
+  let cloudStatusMode = 'local';
+  let cloudStatusText = 'Nicht mit der Cloud verbunden';
+  let cloudAuthMode = 'login';
+  let cloudAuthBusy = false;
 
 
   function getPathValue(object, path){
@@ -908,8 +913,17 @@ import { showToast } from './ui/toast.js';
   const cloudModalCopy = document.getElementById('cloudModalCopy');
   const cloudSignedOutPanel = document.getElementById('cloudSignedOutPanel');
   const cloudSignedInPanel = document.getElementById('cloudSignedInPanel');
+  const cloudAccountIcon = cloudToggle.querySelector('.cloud-account-icon');
+  const cloudSyncIcon = cloudToggle.querySelector('.cloud-sync-icon');
+  const cloudStatusDot = cloudToggle.querySelector('.cloud-dot');
+  const cloudLoginModeBtn = document.getElementById('cloudLoginModeBtn');
+  const cloudRegisterModeBtn = document.getElementById('cloudRegisterModeBtn');
+  const cloudAuthForm = document.getElementById('cloudAuthForm');
   const cloudEmailInput = document.getElementById('cloudEmailInput');
   const cloudPasswordInput = document.getElementById('cloudPasswordInput');
+  const cloudPasswordConfirmField = document.getElementById('cloudPasswordConfirmField');
+  const cloudPasswordConfirmInput = document.getElementById('cloudPasswordConfirmInput');
+  const cloudAuthMessage = document.getElementById('cloudAuthMessage');
   const cloudCloseBtn = document.getElementById('cloudCloseBtn');
   const cloudSignInBtn = document.getElementById('cloudSignInBtn');
   const cloudSignedInCloseBtn = document.getElementById('cloudSignedInCloseBtn');
@@ -919,6 +933,9 @@ import { showToast } from './ui/toast.js';
   const cloudAccountLabel = document.getElementById('cloudAccountLabel');
   const cloudStatusLabel = document.getElementById('cloudStatusLabel');
   const cloudRevisionLabel = document.getElementById('cloudRevisionLabel');
+  const cloudLastSyncLabel = document.getElementById('cloudLastSyncLabel');
+  const cloudSpacesCount = document.getElementById('cloudSpacesCount');
+  const cloudItemsCount = document.getElementById('cloudItemsCount');
   const cloudUpdateBanner = document.getElementById('cloudUpdateBanner');
   const cloudUpdateBtn = document.getElementById('cloudUpdateBtn');
   const cloudUpdateDismiss = document.getElementById('cloudUpdateDismiss');
@@ -967,16 +984,39 @@ import { showToast } from './ui/toast.js';
   }
   function cloudSaveLocalMeta(){
     if(!cloudUser) return;
+    cloudLastSyncedAt = Date.now();
     try{
       localStorage.setItem(cloudMetaStorageKey(), JSON.stringify({
         revision:cloudRevision,
         contentHash:cloudLastSyncedHash,
         objectPath:cloudObjectPath,
-        savedAt:Date.now()
+        savedAt:cloudLastSyncedAt
       }));
     }catch(e){}
+    cloudUpdateDashboard();
+  }
+  function cloudFormatLastSync(){
+    if(!cloudLastSyncedAt) return 'Noch nicht synchronisiert';
+    try{
+      return new Intl.DateTimeFormat('de-DE',{dateStyle:'short',timeStyle:'short'}).format(new Date(cloudLastSyncedAt));
+    }catch(e){ return 'Synchronisiert'; }
+  }
+  function cloudBoardCounts(){
+    return {
+      spaces:state?.spaces?.length || 0,
+      items:Object.values(state?.data || {}).reduce((sum,data)=>sum+Object.keys(data?.items || {}).length,0)
+    };
+  }
+  function cloudUpdateDashboard(){
+    const counts = cloudBoardCounts();
+    cloudStatusLabel.textContent = cloudStatusText;
+    cloudRevisionLabel.textContent = cloudRevision ? 'Rev. '+cloudRevision : 'Lokal';
+    cloudLastSyncLabel.textContent = cloudFormatLastSync();
+    cloudSpacesCount.textContent = String(counts.spaces);
+    cloudItemsCount.textContent = String(counts.items);
   }
   function cloudSetStatus(mode, label){
+    cloudStatusMode = mode;
     cloudToggle.dataset.state = mode;
     const titles = {
       local:'Cloud-Synchronisierung einrichten',
@@ -987,20 +1027,85 @@ import { showToast } from './ui/toast.js';
       error:'Cloud-Synchronisierung prüfen'
     };
     const statusText = label || titles[mode] || titles.local;
-    cloudToggle.title = statusText;
-    cloudToggle.setAttribute('aria-label', statusText + '. Cloud-Synchronisierung öffnen');
-    if(cloudStatusLabel && label) cloudStatusLabel.textContent = label;
-    if(cloudRevisionLabel) cloudRevisionLabel.textContent = cloudRevision ? 'Rev. '+cloudRevision : 'Lokal';
+    cloudStatusText = statusText;
+    if(cloudUser){
+      cloudToggle.title = statusText;
+      cloudToggle.setAttribute('aria-label', statusText + '. CopyBoard Cloud Dashboard öffnen');
+    } else {
+      cloudToggle.title = 'Anmelden oder Konto erstellen';
+      cloudToggle.setAttribute('aria-label','Anmelden oder Konto erstellen');
+    }
+    cloudUpdateDashboard();
+  }
+  function cloudShowAuthMessage(message,type='error'){
+    cloudAuthMessage.textContent = message;
+    cloudAuthMessage.classList.toggle('success',type === 'success');
+    cloudAuthMessage.hidden = !message;
+  }
+  function cloudSetAuthMode(mode,{preserveMessage=false}={}){
+    cloudAuthMode = mode === 'register' ? 'register' : 'login';
+    const registering = cloudAuthMode === 'register';
+    cloudLoginModeBtn.setAttribute('aria-selected',String(!registering));
+    cloudRegisterModeBtn.setAttribute('aria-selected',String(registering));
+    cloudPasswordConfirmField.hidden = !registering;
+    cloudPasswordInput.autocomplete = registering ? 'new-password' : 'current-password';
+    cloudSignInBtn.textContent = registering ? 'Konto erstellen' : 'Anmelden';
+    cloudModalTitle.textContent = registering ? 'Konto erstellen' : 'Anmelden';
+    cloudModalCopy.textContent = registering
+      ? 'Erstelle ein Konto für die optionale Cloud-Synchronisierung. Dein Board bleibt weiterhin lokal verfügbar.'
+      : 'Melde dich auf deinen Geräten mit demselben Konto an. Deine lokale Kopie bleibt als schneller Offline-Stand erhalten.';
+    if(!registering) cloudPasswordConfirmInput.value = '';
+    if(!preserveMessage) cloudShowAuthMessage('');
+  }
+  function cloudSetAuthBusy(busy){
+    cloudAuthBusy = busy;
+    cloudLoginModeBtn.disabled = busy;
+    cloudRegisterModeBtn.disabled = busy;
+    cloudSignInBtn.disabled = busy;
+    cloudSignInBtn.textContent = busy
+      ? (cloudAuthMode === 'register' ? 'Konto wird erstellt …' : 'Wird angemeldet …')
+      : (cloudAuthMode === 'register' ? 'Konto erstellen' : 'Anmelden');
+  }
+  function cloudFriendlyAuthError(error,action){
+    const message = String(error?.message || '').toLowerCase();
+    if(message.includes('fetch') || message.includes('network')) return 'Die Verbindung zum Kontodienst ist gerade nicht möglich. Bitte versuche es erneut.';
+    if(message.includes('rate') || message.includes('too many')) return 'Zu viele Versuche in kurzer Zeit. Bitte warte einen Moment und versuche es erneut.';
+    if(message.includes('email not confirmed')) return 'Bitte bestätige zuerst deine E-Mail-Adresse und melde dich danach an.';
+    if(message.includes('invalid login')) return 'E-Mail oder Passwort sind nicht korrekt.';
+    if(message.includes('already registered') || message.includes('already been registered')) return 'Für diese E-Mail-Adresse besteht bereits ein Konto. Du kannst dich direkt anmelden.';
+    if(message.includes('password') && (message.includes('least') || message.includes('weak'))) return 'Das Passwort erfüllt die Anforderungen noch nicht. Verwende mindestens 8 Zeichen.';
+    if(message.includes('signup') && message.includes('disabled')) return 'Neue Konten können derzeit nicht erstellt werden.';
+    return action === 'register'
+      ? 'Das Konto konnte nicht erstellt werden. Bitte prüfe deine Eingaben und versuche es erneut.'
+      : 'Die Anmeldung ist fehlgeschlagen. Bitte prüfe deine Eingaben und versuche es erneut.';
+  }
+  function cloudValidateAuth(){
+    const email = cloudEmailInput.value.trim();
+    const password = cloudPasswordInput.value;
+    if(!email){ cloudShowAuthMessage('Bitte gib deine E-Mail-Adresse ein.'); cloudEmailInput.focus(); return null; }
+    if(cloudEmailInput.validity.typeMismatch || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      cloudShowAuthMessage('Bitte gib eine gültige E-Mail-Adresse ein.'); cloudEmailInput.focus(); return null;
+    }
+    if(!password){ cloudShowAuthMessage('Bitte gib dein Passwort ein.'); cloudPasswordInput.focus(); return null; }
+    if(password.length < 8){ cloudShowAuthMessage('Das Passwort muss mindestens 8 Zeichen lang sein.'); cloudPasswordInput.focus(); return null; }
+    if(cloudAuthMode === 'register' && password !== cloudPasswordConfirmInput.value){
+      cloudShowAuthMessage('Die beiden Passwörter stimmen nicht überein.'); cloudPasswordConfirmInput.focus(); return null;
+    }
+    return {email,password};
   }
   function cloudSetSignedInUI(){
     const signedIn = !!cloudUser;
     cloudSignedOutPanel.hidden = signedIn;
     cloudSignedInPanel.hidden = !signedIn;
-    cloudModalTitle.textContent = signedIn ? 'Cloud-Synchronisierung' : 'Geräte verbinden';
-    cloudModalCopy.textContent = signedIn
-      ? 'Änderungen werden lokal gespeichert und anschließend revisionssicher hochgeladen.'
-      : 'Melde dich auf Mac und Windows mit demselben Konto an. Deine lokale Kopie bleibt als schneller Offline-Stand erhalten.';
-    if(signedIn) cloudAccountLabel.textContent = cloudUser.email || 'Angemeldet';
+    cloudAccountIcon.hidden = signedIn;
+    cloudSyncIcon.hidden = !signedIn;
+    cloudStatusDot.hidden = !signedIn;
+    if(signedIn){
+      cloudModalTitle.textContent = 'CopyBoard Cloud Dashboard';
+      cloudModalCopy.textContent = 'Lokale Änderungen werden mit deinem persönlichen Cloud-Stand revisionssicher abgeglichen.';
+      cloudAccountLabel.textContent = cloudUser.email || 'Angemeldet';
+    } else cloudSetAuthMode(cloudAuthMode,{preserveMessage:true});
+    cloudSetStatus(cloudStatusMode,cloudStatusText);
   }
   function cloudShowUpdate(metadata){
     cloudPendingRemote = metadata;
@@ -1108,11 +1213,12 @@ import { showToast } from './ui/toast.js';
   }
   async function cloudConnectUser(user){
     cloudUser = user;
-    cloudSetSignedInUI();
     const localMeta = cloudReadLocalMeta();
     cloudRevision = Number(localMeta?.revision) || 0;
     cloudObjectPath = localMeta?.objectPath || null;
     cloudLastSyncedHash = localMeta?.contentHash || '';
+    cloudLastSyncedAt = Number(localMeta?.savedAt) || null;
+    cloudSetSignedInUI();
     cloudSubscribe();
     cloudSetStatus('syncing','Cloud-Stand wird geprüft …');
 
@@ -1168,6 +1274,7 @@ import { showToast } from './ui/toast.js';
       }
       if(hash === cloudLastSyncedHash){
         cloudDirty = false;
+        cloudSaveLocalMeta();
         cloudSetStatus('synced','Synchronisiert');
         return true;
       }
@@ -1237,6 +1344,21 @@ import { showToast } from './ui/toast.js';
       else cloudSetStatus('synced','Synchronisiert');
     }catch(error){ cloudSetStatus(navigator.onLine ? 'error' : 'offline','Cloud-Verbindung nicht verfügbar'); }
   }
+  function cloudDisconnectUser(){
+    clearTimeout(cloudPushTimer); cloudPushTimer = null;
+    cloudUnsubscribe();
+    cloudUser = null;
+    cloudRevision = 0;
+    cloudObjectPath = null;
+    cloudLastSyncedHash = '';
+    cloudLastSyncedAt = null;
+    cloudDirty = false;
+    cloudPendingRemote = null;
+    cloudHideUpdate();
+    cloudSetAuthMode('login');
+    cloudSetSignedInUI();
+    cloudSetStatus('local','Nicht mit der Cloud verbunden');
+  }
   async function initCloudSync(){
     cloudGetDeviceId();
     cloudSetSignedInUI();
@@ -1257,10 +1379,7 @@ import { showToast } from './ui/toast.js';
       setTimeout(()=>{
         if(session?.user){
           if(session.user.id !== cloudUser?.id) cloudConnectUser(session.user);
-        } else {
-          cloudUnsubscribe(); cloudUser = null; cloudRevision = 0; cloudLastSyncedHash = ''; cloudDirty = false;
-          cloudSetSignedInUI(); cloudSetStatus('local','Nicht mit der Cloud verbunden');
-        }
+        } else cloudDisconnectUser();
       },0);
     });
     const {data,error} = await cloudClient.auth.getSession();
@@ -1269,31 +1388,75 @@ import { showToast } from './ui/toast.js';
     else cloudSetStatus('local','Nicht mit der Cloud verbunden');
   }
 
-  cloudToggle.addEventListener('click',()=>{ cloudSetSignedInUI(); cloudOverlay.classList.add('show'); });
+  cloudToggle.addEventListener('click',()=>{
+    cloudSetSignedInUI();
+    cloudUpdateDashboard();
+    cloudOverlay.classList.add('show');
+    if(!cloudUser) setTimeout(()=>cloudEmailInput.focus(),0);
+  });
   cloudCloseBtn.addEventListener('click',()=>cloudOverlay.classList.remove('show'));
   cloudSignedInCloseBtn.addEventListener('click',()=>cloudOverlay.classList.remove('show'));
   cloudOverlay.addEventListener('click',event=>{ if(event.target===cloudOverlay) cloudOverlay.classList.remove('show'); });
-  cloudSignInBtn.addEventListener('click',async()=>{
-    if(!cloudClient) return;
-    const email = cloudEmailInput.value.trim();
-    const password = cloudPasswordInput.value;
-    if(!email || !password){ showToast('E-Mail und Passwort eingeben'); return; }
-    cloudSignInBtn.disabled = true; cloudSignInBtn.textContent = 'Wird angemeldet …';
-    const {error} = await cloudClient.auth.signInWithPassword({email,password});
-    cloudSignInBtn.disabled = false; cloudSignInBtn.textContent = 'Anmelden';
-    if(error){ showToast('Anmeldung fehlgeschlagen'); return; }
-    cloudPasswordInput.value = '';
-    cloudOverlay.classList.remove('show');
-    showToast('Cloud-Konto verbunden');
+  cloudLoginModeBtn.addEventListener('click',()=>cloudSetAuthMode('login'));
+  cloudRegisterModeBtn.addEventListener('click',()=>cloudSetAuthMode('register'));
+  cloudAuthForm.addEventListener('submit',async event=>{
+    event.preventDefault();
+    if(cloudAuthBusy) return;
+    if(!cloudClient){ cloudShowAuthMessage('Der Kontodienst ist gerade nicht verfügbar. CopyBoard kann weiterhin lokal verwendet werden.'); return; }
+    const credentials = cloudValidateAuth();
+    if(!credentials) return;
+
+    const action = cloudAuthMode;
+    cloudShowAuthMessage('');
+    cloudSetAuthBusy(true);
+    try{
+      if(action === 'register'){
+        const {data,error} = await cloudClient.auth.signUp(credentials);
+        if(error){ cloudShowAuthMessage(cloudFriendlyAuthError(error,action)); return; }
+        cloudPasswordInput.value = '';
+        cloudPasswordConfirmInput.value = '';
+        if(data.session?.user){
+          if(data.session.user.id !== cloudUser?.id) cloudConnectUser(data.session.user);
+          cloudOverlay.classList.remove('show');
+          showToast('Cloud-Konto erstellt und verbunden');
+        } else {
+          cloudShowAuthMessage('Konto erstellt. Bitte bestätige jetzt deine E-Mail-Adresse über den zugesandten Link. Danach kannst du dich anmelden.','success');
+        }
+        return;
+      }
+
+      const {data,error} = await cloudClient.auth.signInWithPassword(credentials);
+      if(error){ cloudShowAuthMessage(cloudFriendlyAuthError(error,action)); return; }
+      cloudPasswordInput.value = '';
+      if(data.user && data.user.id !== cloudUser?.id) cloudConnectUser(data.user);
+      cloudOverlay.classList.remove('show');
+      showToast('Cloud-Konto verbunden');
+    }catch(error){
+      cloudShowAuthMessage(cloudFriendlyAuthError(error,action));
+    }finally{
+      cloudSetAuthBusy(false);
+    }
   });
-  cloudPasswordInput.addEventListener('keydown',event=>{ if(event.key==='Enter') cloudSignInBtn.click(); });
   cloudSyncNowBtn.addEventListener('click',async()=>{
     if(cloudPendingRemote){ cloudShowUpdate(cloudPendingRemote); showToast('Zuerst den neueren Cloud-Stand prüfen'); return; }
+    cloudSyncNowBtn.disabled = true;
     const ok = await cloudUploadNow();
+    cloudSyncNowBtn.disabled = false;
     if(ok) showToast('Synchronisiert');
   });
   cloudDownloadBtn.addEventListener('click',()=>cloudLoadLatest({manual:true}));
-  cloudSignOutBtn.addEventListener('click',async()=>{ if(cloudClient) await cloudClient.auth.signOut(); cloudOverlay.classList.remove('show'); showToast('Cloud-Konto getrennt'); });
+  cloudSignOutBtn.addEventListener('click',async()=>{
+    if(!cloudClient) return;
+    cloudSignOutBtn.disabled = true;
+    try{
+      const {error} = await cloudClient.auth.signOut();
+      if(error){ showToast('Abmelden ist gerade nicht möglich'); return; }
+      cloudDisconnectUser();
+      cloudOverlay.classList.remove('show');
+      showToast('Cloud-Konto getrennt');
+    }catch(error){ showToast('Abmelden ist gerade nicht möglich'); }
+    finally{ cloudSignOutBtn.disabled = false; }
+  });
   cloudUpdateBtn.addEventListener('click',()=>cloudLoadLatest({metadata:cloudPendingRemote,manual:true}));
   cloudUpdateDismiss.addEventListener('click',()=>cloudHideUpdate());
   window.addEventListener('online',()=>{ if(cloudUser){ cloudSetStatus('syncing','Verbindung wird wiederhergestellt …'); cloudReconcile(); } });

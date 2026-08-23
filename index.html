@@ -121,9 +121,10 @@
 <button id="helpToggle" type="button" title="Hilfe &amp; Einstellungen" aria-label="Hilfe und Einstellungen öffnen">
   <svg class="utility-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.09a2 2 0 0 1 1 1.74v.5a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>
 </button>
-<button id="cloudToggle" type="button" data-state="local" title="Cloud-Synchronisierung" aria-label="Cloud-Synchronisierung öffnen">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 18.5h10.7a4.3 4.3 0 0 0 .8-8.5A6.3 6.3 0 0 0 6.1 8.7a4.9 4.9 0 0 0 .4 9.8Z"/><path d="m9 13 3-3 3 3M12 10v6"/></svg>
-  <span class="cloud-dot" aria-hidden="true"></span>
+<button id="cloudToggle" type="button" data-state="local" title="Anmelden oder Konto erstellen" aria-label="Anmelden oder Konto erstellen">
+  <svg class="cloud-account-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>
+  <svg class="cloud-sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M6.5 18.5h10.7a4.3 4.3 0 0 0 .8-8.5A6.3 6.3 0 0 0 6.1 8.7a4.9 4.9 0 0 0 .4 9.8Z"/><path d="m9 13 3-3 3 3M12 10v6"/></svg>
+  <span class="cloud-dot" aria-hidden="true" hidden></span>
 </button>
 <div id="cloudUpdateBanner" role="status" aria-live="polite">
   <span>Neue Elemente sind auf einem anderen Gerät verfügbar.</span>
@@ -134,27 +135,50 @@
 <div class="overlay" id="cloudOverlay" style="z-index:88;">
   <div class="modal cloud-modal">
     <p class="cloud-kicker">CopyBoard Cloud</p>
-    <h3 id="cloudModalTitle">Geräte verbinden</h3>
+    <h3 id="cloudModalTitle">Anmelden</h3>
     <p class="cloud-copy" id="cloudModalCopy">Melde dich auf Mac und Windows mit demselben Konto an. Deine lokale Kopie bleibt als schneller Offline-Stand erhalten.</p>
     <div id="cloudSignedOutPanel">
-      <div class="cloud-fields">
-        <label>E-Mail<input id="cloudEmailInput" type="email" autocomplete="username" placeholder="name@beispiel.de"></label>
-        <label>Passwort<input id="cloudPasswordInput" type="password" autocomplete="current-password" placeholder="Mindestens 8 Zeichen"></label>
+      <div class="cloud-auth-modes" role="tablist" aria-label="Authentifizierungsmodus">
+        <button id="cloudLoginModeBtn" type="button" role="tab" aria-selected="true">Anmelden</button>
+        <button id="cloudRegisterModeBtn" type="button" role="tab" aria-selected="false">Registrieren</button>
       </div>
-      <div class="modal-actions">
-        <button class="modal-cancel" id="cloudCloseBtn">Abbrechen</button>
-        <button class="modal-confirm ok" id="cloudSignInBtn">Anmelden</button>
-      </div>
+      <form id="cloudAuthForm" novalidate>
+        <div class="cloud-fields">
+          <label for="cloudEmailInput">E-Mail</label>
+          <input id="cloudEmailInput" type="email" inputmode="email" autocomplete="username" placeholder="name@beispiel.de">
+          <label for="cloudPasswordInput">Passwort</label>
+          <input id="cloudPasswordInput" type="password" autocomplete="current-password" placeholder="Mindestens 8 Zeichen">
+          <div id="cloudPasswordConfirmField" class="cloud-confirm-field" hidden>
+            <label for="cloudPasswordConfirmInput">Passwort bestätigen</label>
+            <input id="cloudPasswordConfirmInput" type="password" autocomplete="new-password" placeholder="Passwort wiederholen">
+          </div>
+        </div>
+        <p class="cloud-auth-message" id="cloudAuthMessage" role="status" aria-live="polite" hidden></p>
+        <div class="modal-actions">
+          <button class="modal-cancel" id="cloudCloseBtn" type="button">Abbrechen</button>
+          <button class="modal-confirm ok" id="cloudSignInBtn" type="submit">Anmelden</button>
+        </div>
+      </form>
     </div>
     <div id="cloudSignedInPanel" hidden>
-      <div class="cloud-status-card">
-        <strong id="cloudAccountLabel">Angemeldet</strong>
-        <span id="cloudStatusLabel">Verbindung wird geprüft …</span>
-        <span class="cloud-revision" id="cloudRevisionLabel">Lokal</span>
+      <div class="cloud-account-card">
+        <span class="cloud-account-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 18.5h10.7a4.3 4.3 0 0 0 .8-8.5A6.3 6.3 0 0 0 6.1 8.7a4.9 4.9 0 0 0 .4 9.8Z"/></svg>
+        </span>
+        <span class="cloud-account-copy"><strong id="cloudAccountLabel">Angemeldet</strong><small>Cloud-Konto aktiv</small></span>
+      </div>
+      <div class="cloud-dashboard-grid" aria-label="Cloud-Status">
+        <div class="cloud-dashboard-stat cloud-dashboard-status"><span>Sync-Status</span><strong id="cloudStatusLabel">Verbindung wird geprüft …</strong></div>
+        <div class="cloud-dashboard-stat"><span>Revision</span><strong id="cloudRevisionLabel">Lokal</strong></div>
+        <div class="cloud-dashboard-stat"><span>Letzte Synchronisierung</span><strong id="cloudLastSyncLabel">Noch nicht synchronisiert</strong></div>
+      </div>
+      <div class="cloud-board-summary" aria-label="Board-Informationen">
+        <div><strong id="cloudSpacesCount">0</strong><span>Spaces</span></div>
+        <div><strong id="cloudItemsCount">0</strong><span>Elemente</span></div>
       </div>
       <div class="modal-actions">
         <button class="modal-cancel" id="cloudSignedInCloseBtn">Schließen</button>
-        <button class="modal-confirm ok" id="cloudSyncNowBtn">Jetzt synchronisieren</button>
+        <button class="modal-confirm ok" id="cloudSyncNowBtn">Synchronisieren</button>
       </div>
       <div class="cloud-secondary-actions">
         <button id="cloudDownloadBtn" type="button">Cloud-Stand laden</button>
