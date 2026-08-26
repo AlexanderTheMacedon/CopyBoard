@@ -1,4 +1,4 @@
-# CopyBoard Online
+# CopyBoard
 
 A fast, local-first workspace for clipboard content and files — directly in your browser.
 
