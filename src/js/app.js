@@ -3161,7 +3161,7 @@ import { showToast } from './ui/toast.js';
   }
   function renderGridChrome(){
     countPill.textContent = items.length;
-    clearBtn.hidden = items.length === 0;
+    clearBtn.disabled = items.length === 0;
     emptyNote.style.display = items.length === 0 ? 'block' : 'none';
     dropzone.classList.toggle('hero',items.length===0);
     dropzone.classList.toggle('compact',items.length>0);
@@ -3684,6 +3684,7 @@ import { showToast } from './ui/toast.js';
       {icon:ICONS.paste, label:'Einfügen', onClick:pasteFromClipboard},
       {sep:true},
       {icon:ICONS.plus, label:'Neuer Space', onClick:addSpace},
+      {icon:ICONS.trash, label:'Space leeren', danger:true, disabled:items.length===0, onClick:()=>clearBtn.click()},
       {sep:true},
       {label:'Ansicht', header:true},
       {icon:ICONS.grid, label:'Kachelansicht'+(viewMode==='grid'?' ✓':''), onClick:()=>setViewMode('grid')},
