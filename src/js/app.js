@@ -2073,7 +2073,7 @@ import { showToast } from './ui/toast.js';
 
   function decorateMenuIcons(root=document){
     root.querySelectorAll('.ctx-row,.dropdown-row').forEach(control=>{
-      if(control.querySelector('.menu-icon-wrap')) return;
+      if(control.querySelector('.menu-icon-wrap') || (control.matches('.ctx-row') && control.children.length > 1)) return;
       const label=(control.textContent || control.getAttribute('aria-label') || control.title || '').trim();
       const iconName=inferMenuIcon(label);
       if(!iconName || !MENU_ICONS[iconName]) return;
