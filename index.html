@@ -77,9 +77,6 @@
         <button class="btn-ghost accent" id="micBtn" title="Sprachmemo aufnehmen">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg>
         </button>
-        <button class="btn-ghost accent" id="watchBtn" title="Paste Capture: bewusstes Einfügen mit ⌘/Strg+V automatisch ablegen">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
         <button class="btn-ghost danger" id="clearBtn" disabled>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg> Space leeren
         </button>
@@ -535,7 +532,6 @@
           <p class="help-eyebrow">Einstellungen</p><h2>CopyBoard anpassen.</h2><p class="help-lead">Die wichtigsten laufenden Einstellungen lassen sich hier direkt schalten.</p>
           <div class="help-setting-list">
             <div class="help-setting"><div class="help-setting-copy"><strong>AutoSave</strong><span id="helpAutosaveStatus">Status wird geladen</span></div><button class="help-action" id="helpAutosaveBtn">Umschalten</button></div>
-            <div class="help-setting"><div class="help-setting-copy"><strong>Paste Capture</strong><span id="helpPasteStatus">Status wird geladen</span></div><button class="help-action" id="helpPasteBtn">Umschalten</button></div>
             <div class="help-setting"><div class="help-setting-copy"><strong>Standardansicht</strong><span>Gilt für dieses Board und wird sofort angewendet.</span></div><select class="help-select" id="helpViewModeSelect" aria-label="Standardansicht"><option value="grid">Kacheln</option><option value="list">Liste</option></select></div>
             <div class="help-setting"><div class="help-setting-copy"><strong>Standardsortierung</strong><span>Wird für neu angelegte Spaces verwendet.</span></div><select class="help-select" id="helpDefaultSortSelect" aria-label="Standardsortierung"><option value="manual">Manuell</option><option value="name">Name A–Z</option><option value="newest">Neueste zuerst</option><option value="oldest">Älteste zuerst</option><option value="size">Größe absteigend</option><option value="type">Dateityp</option></select></div>
             <div class="help-setting"><div class="help-setting-copy"><strong>Verlaufslänge</strong><span>Maximale Anzahl unter „Zuletzt verwendet“.</span></div><select class="help-select" id="helpRecentLimitSelect" aria-label="Verlaufslänge"><option value="10">10 Einträge</option><option value="20">20 Einträge</option><option value="30">30 Einträge</option><option value="50">50 Einträge</option><option value="100">100 Einträge</option></select></div>

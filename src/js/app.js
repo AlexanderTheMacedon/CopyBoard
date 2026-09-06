@@ -5,7 +5,6 @@ import {
   STATE_SCHEMA_VERSION,
   AUTOSAVE_PREF_KEY,
   AUTOSAVE_LAST_SAVED_KEY,
-  PASTE_CAPTURE_PREF_KEY,
   CLOUD_DEVICE_KEY,
   CLOUD_META_KEY_PREFIX,
   CLOUD_PUSH_DEBOUNCE_MS,
@@ -811,7 +810,6 @@ import { showToast } from './ui/toast.js';
   const paletteSwatches = document.getElementById('paletteSwatches');
   const paletteExtractCloseBtn = document.getElementById('paletteExtractCloseBtn');
   const paletteExtractSaveBtn = document.getElementById('paletteExtractSaveBtn');
-  const watchBtn = document.getElementById('watchBtn');
   const pinOverlay = document.getElementById('pinOverlay');
   const pinOverlayTitle = document.getElementById('pinOverlayTitle');
   const pinInput = document.getElementById('pinInput');
@@ -830,9 +828,7 @@ import { showToast } from './ui/toast.js';
   const helpCloseBtn = document.getElementById('helpCloseBtn');
   const helpNav = document.getElementById('helpNav');
   const helpAutosaveStatus = document.getElementById('helpAutosaveStatus');
-  const helpPasteStatus = document.getElementById('helpPasteStatus');
   const helpAutosaveBtn = document.getElementById('helpAutosaveBtn');
-  const helpPasteBtn = document.getElementById('helpPasteBtn');
   // V32.1 runtime fix: legacy helpGridBtn/helpListBtn references were removed with the new select control.
   const helpViewModeSelect = document.getElementById('helpViewModeSelect');
   const helpDefaultSortSelect = document.getElementById('helpDefaultSortSelect');
@@ -2136,7 +2132,7 @@ import { showToast } from './ui/toast.js';
     if(action==='palette') return 'palette';
     if(action==='storage') return 'storage';
     if(action==='new-space') return 'plus';
-    if(id==='helpAutosaveBtn' || id==='helpPasteBtn') return 'toggle';
+    if(id==='helpAutosaveBtn') return 'toggle';
     if(id==='helpExportSettingsBtn') return 'download';
     if(id==='helpImportSettingsBtn') return 'upload';
     if(id==='helpResetSettingsBtn') return 'reset';
@@ -2787,9 +2783,7 @@ import { showToast } from './ui/toast.js';
   }
   function syncHelpSettings(){
     if(helpAutosaveStatus) helpAutosaveStatus.textContent = memoryProtectionOn ? 'Aktiv – Änderungen werden dauerhaft lokal gespeichert.' : 'Temporär – Änderungen dieser Sitzung werden nicht gespeichert.';
-    if(helpPasteStatus) helpPasteStatus.textContent = pasteCaptureOn ? 'Aktiv – bewusstes ⌘/Strg+V wird direkt abgelegt.' : 'Aus – globale Paste-Ereignisse werden nicht übernommen.';
     helpAutosaveBtn?.classList.toggle('active', memoryProtectionOn);
-    helpPasteBtn?.classList.toggle('active', pasteCaptureOn);
     if(helpViewModeSelect) helpViewModeSelect.value = getSetting('appearance.viewMode');
     if(helpDefaultSortSelect) helpDefaultSortSelect.value = getSetting('behavior.defaultSortMode');
     if(helpRecentLimitSelect) helpRecentLimitSelect.value = String(getSetting('history.recentLimit'));
@@ -2816,7 +2810,6 @@ import { showToast } from './ui/toast.js';
     if(type==='new-space'){ helpOverlay.classList.remove('show'); addSpace(); }
   });
   helpAutosaveBtn.addEventListener('click', ()=>{ memoryToggle.click(); syncHelpSettings(); });
-  helpPasteBtn.addEventListener('click', ()=>{ setPasteCapture(!pasteCaptureOn); syncHelpSettings(); });
   helpViewModeSelect?.addEventListener('change', ()=>{
     setViewMode(helpViewModeSelect.value);
     syncHelpSettings();
@@ -3708,7 +3701,6 @@ import { showToast } from './ui/toast.js';
   fileInput.addEventListener('change', async (e)=>{ await ingestFiles(e.target.files); fileInput.value=''; });
 
   document.addEventListener('paste', async (e)=>{
-    if(!pasteCaptureOn) return;
     if(document.activeElement === textArea || document.activeElement === folderTitleInput || document.activeElement === titleInput || document.activeElement === renameInput) return;
     if(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('tab-rename-input')) return;
     const cd = e.clipboardData; if(!cd) return;
@@ -4889,26 +4881,6 @@ import { showToast } from './ui/toast.js';
   }
   burnCloseBtn.addEventListener('click', ()=>{ burnOverlay.classList.remove('show'); burnContent.textContent=''; });
 
-  // ================= PASTE CAPTURE =================
-  // Browser pages cannot reliably monitor the clipboard in the background.
-  // This mode only reacts to an explicit paste gesture and therefore causes no permission polling.
-  let pasteCaptureOn = true;
-  function syncPasteCaptureUI(){
-    watchBtn.classList.toggle('active', pasteCaptureOn);
-    watchBtn.setAttribute('aria-pressed', pasteCaptureOn ? 'true' : 'false');
-    watchBtn.title = pasteCaptureOn
-      ? 'Paste Capture aktiv: ⌘/Strg+V legt Inhalte direkt in CopyBoard ab'
-      : 'Paste Capture aus: ⌘/Strg+V wird von CopyBoard nicht automatisch übernommen';
-  }
-  function setPasteCapture(enabled, announce=true){
-    pasteCaptureOn = !!enabled;
-    setSetting('device.pasteCapture', pasteCaptureOn, {persist:false});
-    syncPasteCaptureUI();
-    if(announce) showToast(pasteCaptureOn ? 'Paste Capture aktiviert' : 'Paste Capture deaktiviert');
-  }
-  watchBtn.addEventListener('click', ()=> setPasteCapture(!pasteCaptureOn));
-
-
   menuDecorationObserver.observe(document.body,{childList:true,subtree:true});
   document.addEventListener('click',()=>queueMicrotask(()=>decorateMenuIcons()),true);
   queueMicrotask(()=>decorateMenuIcons());
@@ -5097,8 +5069,6 @@ import { showToast } from './ui/toast.js';
   (async function init(){
     checkBurnHash();
     deviceSettings = loadDeviceSettings();
-    pasteCaptureOn = getSetting('device.pasteCapture');
-    syncPasteCaptureUI();
     try{
       const savedTs = storageAvailable ? Number(localStorage.getItem(AUTOSAVE_LAST_SAVED_KEY)) : 0;
       lastSavedAt = Number.isFinite(savedTs) && savedTs > 0 ? savedTs : null;

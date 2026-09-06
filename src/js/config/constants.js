@@ -8,7 +8,6 @@ export const STORAGE_KEY = 'copyboard_state_v1';
 export const STATE_SCHEMA_VERSION = 1;
 export const AUTOSAVE_PREF_KEY = 'copyboard_autosave_pref';
 export const AUTOSAVE_LAST_SAVED_KEY = 'copyboard_autosave_last_saved';
-export const PASTE_CAPTURE_PREF_KEY = 'copyboard_paste_capture_pref';
 export const CLOUD_DEVICE_KEY = 'copyboard_cloud_device_id_v1';
 export const CLOUD_META_KEY_PREFIX = 'copyboard_cloud_meta_v1:';
 export const CLOUD_PUSH_DEBOUNCE_MS = 900;
@@ -57,12 +56,6 @@ export const SETTINGS_REGISTRY = Object.freeze({
     scope:'device',
     default:true,
     storageKey:AUTOSAVE_PREF_KEY,
-    normalize:value=>value !== false
-  },
-  'device.pasteCapture': {
-    scope:'device',
-    default:true,
-    storageKey:PASTE_CAPTURE_PREF_KEY,
     normalize:value=>value !== false
   }
 });
