@@ -465,7 +465,7 @@ import { showToast } from './ui/toast.js';
   function refreshAutosaveStatus(){
     if(!storageAvailable){ updateAutosaveStatus('Nicht<br>verfügbar'); return; }
     if(memoryProtectionOn){
-      updateAutosaveStatus(lastSavedAt ? 'Gespeichert<br>' + nowTimeStr(lastSavedAt) : 'AutoSave<br>bereit');
+      updateAutosaveStatus(lastSavedAt ? 'Gespeichert um<br>' + nowTimeStr(lastSavedAt) : 'AutoSave<br>bereit');
     } else {
       updateAutosaveStatus(sessionDirty ? 'Temporär<br>ungespeichert' : 'Temporär<br>aktiv');
     }
