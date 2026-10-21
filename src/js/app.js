@@ -632,6 +632,25 @@ import { showToast } from './ui/toast.js';
       : 'Speichern gesperrt — neue Inhalte werden nicht angenommen');
     return true;
   }
+  // R01.1: honest edit feedback. Edits are explicit commits, so they flush instead of waiting for
+  // the debounce; "gespeichert" appears only after a verified write (Save-ACK).
+  // applied = UI only (temporary mode) · pending = write still scheduled · saved = verified · failed = blocked or failed
+  function persistEditOutcome(){
+    if(storageAvailable && !memoryProtectionOn){ persistState(); return 'applied'; }
+    if(!persistState({immediate:true})) return 'failed';
+    return persistPending ? 'pending' : 'saved';
+  }
+  function showEditSaveToast(subject, item){
+    // I-C05 stays open: a remote apply may have replaced the board while the editor held this item.
+    if(item && locateItem(item.id)?.item !== item){ showToast(subject+' nicht übernommen · Karte wurde inzwischen ersetzt'); return; }
+    const outcome = persistEditOutcome();
+    if(outcome === 'saved'){ showToast(subject+' gespeichert'); return; }
+    showToast(subject+' übernommen · '+(
+      outcome === 'applied' ? 'Temporärer Modus, nicht gespeichert'
+      : outcome === 'pending' ? 'Speichern ausstehend'
+      : persistBlockedReason && persistBlockedReason !== 'quota' ? 'Speichern gesperrt'
+      : 'Speichern fehlgeschlagen'));
+  }
   function exportUnreadableRawState(){
     if(unreadableRawState === null) return;
     const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
@@ -2432,8 +2451,8 @@ import { showToast } from './ui/toast.js';
     if(!Array.isArray(state.helpNotes)) state.helpNotes=[];
     mutationCheckpoint('notes');
     state.helpNotes.push({id:'note_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), text:value, createdAt:Date.now()});
-    helpNoteInput.value=''; persistState(); renderHelpNotes();
-    showToast('Sticky Note gespeichert');
+    helpNoteInput.value=''; renderHelpNotes();
+    showEditSaveToast('Sticky Note');
   }
   helpNoteAddBtn?.addEventListener('click', addHelpNote);
   helpNoteInput?.addEventListener('keydown', e=>{ if((e.metaKey||e.ctrlKey) && e.key==='Enter'){ e.preventDefault(); addHelpNote(); } });
@@ -2928,9 +2947,9 @@ import { showToast } from './ui/toast.js';
     syncHelpSettings();
   });
   helpDefaultSortSelect?.addEventListener('change', ()=>{
-    setSetting('behavior.defaultSortMode', helpDefaultSortSelect.value);
+    setSetting('behavior.defaultSortMode', helpDefaultSortSelect.value, {persist:false});
     syncHelpSettings();
-    showToast('Standardsortierung gespeichert');
+    showEditSaveToast('Standardsortierung');
   });
   helpRecentLimitSelect?.addEventListener('change', ()=>{
     const limit = setSetting('history.recentLimit', Number(helpRecentLimitSelect.value), {persist:false});
@@ -3224,7 +3243,7 @@ import { showToast } from './ui/toast.js';
       persistState();
       markRecent(session.item,'edit',session.ctx?.insideFolder ? session.ctx.folderId : null);
       if(session.ctx?.insideFolder) renderFolderGrid(); else { refreshItems(); render(); }
-      showToast('Text gespeichert');
+      showEditSaveToast('Text', session.item);
     }else{
       session.editor.remove();
       if(saveChanges) showToast('Keine Änderungen');
@@ -4729,7 +4748,7 @@ import { showToast } from './ui/toast.js';
       persistState();
       markRecent(item,'edit',ctx && ctx.insideFolder ? ctx.folderId : null);
       if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
-      showToast('Gespeichert');
+      showEditSaveToast('Text', item);
     } else {
       ingestText(val);
     }
@@ -4769,7 +4788,7 @@ import { showToast } from './ui/toast.js';
     editImageContext = null;
     markRecent(item,'edit');
     if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
-    showToast('Bild gespeichert');
+    showEditSaveToast('Bild', item);
   });
 
   // ---- file replace (re-upload swaps content in place) ----
@@ -4791,7 +4810,7 @@ import { showToast } from './ui/toast.js';
       item.type = file.type && file.type.startsWith('image/') ? 'image' : 'file';
       markRecent(item,'edit');
       if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
-      showToast('Datei ersetzt');
+      showEditSaveToast('Datei', item);
     }catch(err){ showToast('Konnte Datei nicht lesen'); }
   });
 
@@ -4808,7 +4827,7 @@ import { showToast } from './ui/toast.js';
         stream.getTracks().forEach(t=>t.stop());
         const blob = new Blob(recordedChunks, {type:'audio/webm'});
         const dataUrl = await blobToDataURL(blob);
-        if(addItem({ id:uid(), type:'file', name:'Sprachmemo '+new Date().toLocaleTimeString('de-DE').slice(0,5).replace(':','-')+'.webm', mime:'audio/webm', size:blob.size, timestamp:Date.now(), data:dataUrl })) showToast('Sprachmemo gespeichert');
+        if(addItem({ id:uid(), type:'file', name:'Sprachmemo '+new Date().toLocaleTimeString('de-DE').slice(0,5).replace(':','-')+'.webm', mime:'audio/webm', size:blob.size, timestamp:Date.now(), data:dataUrl })) showEditSaveToast('Sprachmemo');
       };
       mediaRecorder.start();
       micBtn.classList.add('recording');
