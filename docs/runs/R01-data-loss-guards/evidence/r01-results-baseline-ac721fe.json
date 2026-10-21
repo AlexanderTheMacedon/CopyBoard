@@ -1,0 +1,160 @@
+{
+  "generatedAt": "2026-10-21T20:41:32.374Z",
+  "base": "http://127.0.0.1:8765/",
+  "label": "baseline-ac721fe",
+  "browser": "Chromium (Playwright, headless)",
+  "results": [
+    {
+      "id": "A1",
+      "covers": "G1 · I-35",
+      "title": "Gespeicherter State: schemaVersion:2 — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload",
+      "status": "FAIL",
+      "expected": "Key byte-identisch nach Start, 5 s, Paste und Reload; Hinweis sichtbar; Paste abgelehnt; Rohdaten-Export = Original; keine Cloud-Operation",
+      "observed": "identisch: Start=false, 5s=false, Reload=false; Hinweis=false/false \"\"; Paste abgelehnt=false (Toast \"\"); Export=Original: false (99 Zeichen); Status=\"Gespeichert um 22:40:03\"; Cloud-Operationen=9 (Schreibend 5)",
+      "ms": 10846
+    },
+    {
+      "id": "A2",
+      "covers": "G1 · I-35",
+      "title": "Gespeicherter State: abgeschnittenes JSON — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload",
+      "status": "FAIL",
+      "expected": "Key byte-identisch nach Start, 5 s, Paste und Reload; Hinweis sichtbar; Paste abgelehnt; Rohdaten-Export = Original; keine Cloud-Operation",
+      "observed": "identisch: Start=false, 5s=false, Reload=false; Hinweis=false/false \"\"; Paste abgelehnt=false (Toast \"\"); Export=Original: false (99 Zeichen); Status=\"Gespeichert um 22:40:14\"; Cloud-Operationen=9 (Schreibend 5)",
+      "ms": 10849
+    },
+    {
+      "id": "A2b",
+      "covers": "G1 · I-35",
+      "title": "Gespeicherter State: settings.schemaVersion:2 — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload",
+      "status": "FAIL",
+      "expected": "Key byte-identisch nach Start, 5 s, Paste und Reload; Hinweis sichtbar; Paste abgelehnt; Rohdaten-Export = Original; keine Cloud-Operation",
+      "observed": "identisch: Start=false, 5s=false, Reload=false; Hinweis=false/false \"\"; Paste abgelehnt=false (Toast \"\"); Export=Original: false (99 Zeichen); Status=\"Gespeichert um 22:40:24\"; Cloud-Operationen=9 (Schreibend 5)",
+      "ms": 10871
+    },
+    {
+      "id": "A2c",
+      "covers": "G1 · I-35",
+      "title": "Gespeicherter State: JSON-Array statt Objekt — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload",
+      "status": "FAIL",
+      "expected": "Key byte-identisch nach Start, 5 s, Paste und Reload; Hinweis sichtbar; Paste abgelehnt; Rohdaten-Export = Original; keine Cloud-Operation",
+      "observed": "identisch: Start=false, 5s=false, Reload=false; Hinweis=false/false \"\"; Paste abgelehnt=false (Toast \"\"); Export=Original: false (99 Zeichen); Status=\"Gespeichert um 22:40:35\"; Cloud-Operationen=9 (Schreibend 5)",
+      "ms": 10857
+    },
+    {
+      "id": "A3",
+      "covers": "G2 · I-36",
+      "title": "Rausch-PNGs bis zur Grenze: Ablehnung vor dem Fehlschlag, Kartenzahl UI = gespeichert = nach Reload",
+      "status": "FAIL",
+      "expected": "Erfassung wird vor dem echten Quota-Fehler abgelehnt; keine Karte geht beim Reload verloren",
+      "observed": "#1: Karten 1, Status \"Gespeichert um 22:40:41\", Toast \"\"; #2: Karten 2, Status \"Gespeichert um 22:40:42\", Toast \"\"; #3: Karten 3, Status \"Speichern fehlgeschlagen\", Toast \"Konnte nicht gespeichert werden (Speicherlimit erreicht?)\"; #4: Karten 4, Status \"Speichern fehlgeschlagen\", Toast \"Konnte nicht gespeichert werden (Speicherlimit erreicht?)\"; abgelehnt bei Bild null; Speichern je fehlgeschlagen=true; UI=4, gespeichert=2 (3924041 Zeichen), nach Reload=2",
+      "ms": 5037
+    },
+    {
+      "id": "A3b",
+      "covers": "G2 · I-36 / Save-ACK",
+      "title": "Echter Quota-Fehler (Speicher künstlich verknappt): dauerhafter Hinweis, kein \"Gespeichert\", Erfassung gesperrt, RAM-Export rettet",
+      "status": "FAIL",
+      "expected": "",
+      "observed": "Harness-/Testfehler: page.click: Timeout 3000ms exceeded.",
+      "ms": 6188
+    },
+    {
+      "id": "A4",
+      "covers": "G2 · Quota-Recovery-Commit",
+      "title": "Wie A3b, dann gespeicherte Karte löschen: verifizierter Save hebt Sperre auf, Erfassung wieder möglich",
+      "status": "FAIL",
+      "expected": "Löschen bleibt erlaubt; nächster verifizierter Save (inkl. der zuvor ungespeicherten Karte) hebt die Sperre auf; Erfassung danach wieder möglich",
+      "observed": "Hinweis nach Löschen=false; Status=\"Gespeichert um 22:40:52\"; gespeichert: zuvor ungespeichertes Bild übernommen=false; neuer Paste gespeichert=true; UI=3, nach Reload=3",
+      "ms": 2151
+    },
+    {
+      "id": "S1",
+      "covers": "G2 · Save-ACK vs. Zeitstempel",
+      "title": "Schreiben von copyboard_autosave_last_saved scheitert, State-Write gelingt",
+      "status": "FAIL",
+      "expected": "State gespeichert → Status \"Gespeichert\"; gescheiterter Zeitstempel ist kein Save-Fehler",
+      "observed": "State gespeichert=true; Status=\"Speichern fehlgeschlagen\"; Sperr-Hinweis=false",
+      "ms": 1438
+    },
+    {
+      "id": "A5",
+      "covers": "G3 · N4",
+      "title": "Board mit 3,3 M Zeichen, Backup-Import, Recovery-Kopie passt nicht in den Speicher",
+      "status": "FAIL",
+      "expected": "Import abgebrochen, gespeichertes Board byte-identisch, Toast nennt Grund",
+      "observed": "Board 3301172 Zeichen; nach Import byte-identisch=false; UI zeigt alten Stand=false; Recovery-Key vorhanden=false; Toast=\"Board importiert\"",
+      "ms": 2309
+    },
+    {
+      "id": "A5b",
+      "covers": "G3 · N4 (Cloud)",
+      "title": "Manuelles \"Aktualisieren\" bei lokalen Änderungen, Recovery-Kopie passt nicht",
+      "status": "FAIL",
+      "expected": "Laden abgebrochen, lokaler Stand inkl. ungesyncter Änderung byte-identisch, Cloud unverändert",
+      "observed": "Update-Banner=true; lokal byte-identisch=false; lokale Änderung erhalten=false; Toast=\"Neuer Cloud-Stand geladen\"; Cloud-Revision=2; Cloud-Schreibops danach=[]",
+      "ms": 4642
+    },
+    {
+      "id": "A6",
+      "covers": "G4 · N3",
+      "title": "Mock-Snapshot 6,3 M Zeichen, leeres Gerät, danach Reload",
+      "status": "FAIL",
+      "expected": "Snapshot nicht angewendet; Backend-Revision bleibt 1; Originalobjekt bleibt; kein Upload; keine Cloud-Meta",
+      "observed": "Status Start=\"synced / Synchronisiert\"; nach Reload=\"synced / Synchronisiert\"; lokale Cloud-Meta={\"revision\":1,\"contentHash\":\"8ec16bc5a92868e91ad167e04dc53fdfe021afaf08aafad36a0ac3493c234bce\",\"objectPath\":\"00000000-0000-4000-8000-0000000000aa/snapshots/1-device-other.json\",\"savedAt\":1792615263183}; lokaler State 425 Zeichen; Backend-Revision=2; Originalobjekt vorhanden=false; Cloud-Schreibops=[\"upload\",\"rpc\",\"remove\"]",
+      "ms": 6950
+    },
+    {
+      "id": "A6b",
+      "covers": "G4 · Abort/Restore",
+      "title": "Synchronisiertes Gerät, neuer Cloud-Stand (3 M) passt nicht in den verknappten Speicher → Rollback",
+      "status": "FAIL",
+      "expected": "Lokaler Commit scheitert → vorheriger State aktiv, Meta unverändert, Status nennt Grund, kein Upload/Löschen, auch nach Reload",
+      "observed": "vor Reload {\"localSame\":true,\"metaSame\":false,\"ui\":false,\"banner\":false,\"st\":\"synced / Synchronisiert\"}; nach Reload {\"localSame\":true,\"metaSame\":false,\"ui\":true,\"banner\":false,\"st\":\"synced / Synchronisiert\"}; Backend-Revision=3; Objekt rev2 vorhanden=false; Cloud-Schreibops=[\"upload\",\"rpc\",\"remove\"]; Füller=4515296 Zeichen",
+      "ms": 8409
+    },
+    {
+      "id": "A7",
+      "covers": "G4 · N3b",
+      "title": "Gescheiterter Save, dann \"Jetzt synchronisieren\"",
+      "status": "FAIL",
+      "expected": "Kein Upload, Revision unverändert, Status nennt den Grund",
+      "observed": "Autosave-Status=\"Speichern fehlgeschlagen\"; Sperr-Hinweis=false; Revision 1→2; Cloud-Schreibops=[\"upload\",\"rpc\",\"remove\"]; Sync-Status=\"Synchronisiert\"",
+      "ms": 3350
+    },
+    {
+      "id": "A8",
+      "covers": "G5 · N8",
+      "title": "Zwei Tabs, sequenziell: Tab A speichert, dann Paste im veralteten Tab B; danach Neu laden",
+      "status": "FAIL",
+      "expected": "Veralteter Tab wird gesperrt, überschreibt nichts",
+      "observed": "B gesperrt nach Write von A=false; Karte A erhalten=false; veralteter Paste in B gespeichert=true",
+      "ms": 2358
+    },
+    {
+      "id": "A8r",
+      "covers": "G5 · Restrisiko",
+      "title": "Zwei Tabs, gleichzeitig (5 Durchläufe): echte Schreibrennen",
+      "status": "RISK",
+      "expected": "Keine Garantie in R01: storage-Events sind nicht atomar; echte Single-Writer-Sicherheit erst mit Web Locks (R05)",
+      "observed": "#1: gespeichert A/B=false/true, gesperrt A/B=false/false STILL VERLOREN; #2: gespeichert A/B=false/true, gesperrt A/B=false/false STILL VERLOREN; #3: gespeichert A/B=false/true, gesperrt A/B=false/false STILL VERLOREN; #4: gespeichert A/B=true/false, gesperrt A/B=false/false STILL VERLOREN; #5: gespeichert A/B=true/false, gesperrt A/B=false/false STILL VERLOREN; Durchläufe mit nicht gespeicherter Karte: 5/5",
+      "note": "Bei verlorener Karte ist der unterlegene Tab gesperrt und bietet RAM-Export; still ist der Verlust nur, wenn kein Tab gesperrt wurde.",
+      "ms": 8334
+    },
+    {
+      "id": "A10",
+      "covers": "Syntax",
+      "title": "node --check für alle Module",
+      "status": "PASS",
+      "expected": "alle bestanden",
+      "observed": "src/js/app.js: ok; src/js/config/constants.js: ok; src/js/ui/toast.js: ok; src/js/utils/files.js: ok; src/js/utils/format.js: ok",
+      "ms": 137
+    }
+  ],
+  "externalHostsRequested": [
+    "fonts.googleapis.com",
+    "cdnjs.cloudflare.com",
+    "cdn.jsdelivr.net"
+  ],
+  "supabaseContacted": false,
+  "note": "All external hosts intercepted (aborted or served locally); Supabase replaced by an in-memory mock; synthetic data only."
+}
