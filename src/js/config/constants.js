@@ -3,7 +3,9 @@
  */
 
 export const MAX_FILE_BYTES = 8 * 1024 * 1024;
-export const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+// Conservative cap for JSON.stringify(state).length (UTF-16 code units) in localStorage.
+// Real browser quotas vary (Chromium ≈ 5.2 M per origin); failed writes are still detected at save time.
+export const MAX_LOCAL_STATE_CHARS = 4_500_000;
 export const STORAGE_KEY = 'copyboard_state_v1';
 export const STATE_SCHEMA_VERSION = 1;
 export const AUTOSAVE_PREF_KEY = 'copyboard_autosave_pref';

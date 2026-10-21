@@ -123,6 +123,12 @@
   <svg class="cloud-sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M6.5 18.5h10.7a4.3 4.3 0 0 0 .8-8.5A6.3 6.3 0 0 0 6.1 8.7a4.9 4.9 0 0 0 .4 9.8Z"/><path d="m9 13 3-3 3 3M12 10v6"/></svg>
   <span class="cloud-dot" aria-hidden="true" hidden></span>
 </button>
+<div id="persistBlockedBanner" role="alert" hidden>
+  <span id="persistBlockedText"></span>
+  <button id="persistRawExportBtn" type="button" hidden>Rohdaten exportieren</button>
+  <button id="persistBackupExportBtn" type="button" hidden>Backup exportieren</button>
+  <button id="persistReloadBtn" type="button" hidden>Neu laden</button>
+</div>
 <div id="cloudUpdateBanner" role="status" aria-live="polite">
   <span>Neue Elemente sind auf einem anderen Gerät verfügbar.</span>
   <button id="cloudUpdateBtn" type="button">Aktualisieren</button>
@@ -443,7 +449,7 @@
   <div class="modal" style="max-width:430px; text-align:left;">
     <h3 style="text-align:center;">Speicherstatus</h3>
     <div class="storage-meter"><div class="storage-meter-fill" id="storageMeterFill"></div></div>
-    <div class="storage-summary"><span id="storageUsedLabel">0 B verwendet</span><span id="storageLimitLabel">von 20 MB</span></div>
+    <div class="storage-summary"><span id="storageUsedLabel">0 B verwendet</span><span id="storageLimitLabel">von 4.3 MB</span></div>
     <div class="storage-stats">
       <div class="storage-stat"><strong id="storageCardsCount">0</strong><span>Karten</span></div>
       <div class="storage-stat"><strong id="storageSpacesCount">0</strong><span>Spaces</span></div>
@@ -555,7 +561,7 @@
           <p class="help-eyebrow">Technische Grenzen</p><h2>Was lokal bedeutet.</h2><p class="help-lead">CopyBoard ist weiterhin eine einzelne Browserdatei. Das ist flexibel, setzt aber klare Grenzen.</p>
           <div class="help-notice"><strong>PIN-Schutz:</strong> Der aktuelle Schutz ist ein Prototyp und keine echte Verschlüsselung. Sensible Inhalte sollten deshalb nicht als kryptografisch geschützt betrachtet werden.</div>
           <div class="help-notice" style="margin-top:10px"><strong>Paste Capture:</strong> Eine Webseite kann Kopiervorgänge in anderen Tabs oder Apps nicht zuverlässig im Hintergrund beobachten. V27 reagiert nur auf bewusstes Einfügen innerhalb von CopyBoard.</div>
-          <div class="help-notice" style="margin-top:10px"><strong>Speicher:</strong> Browser können localStorage enger begrenzen als CopyBoards interne 20-MB-Grenze. Regelmäßige Backups bleiben sinnvoll.</div>
+          <div class="help-notice" style="margin-top:10px"><strong>Speicher:</strong> CopyBoard begrenzt das lokale Board auf etwa 4,3 MB (4,5 Mio. Zeichen); einzelne Browser können localStorage noch enger begrenzen. Schlägt ein Speichern fehl, erscheint ein dauerhafter Hinweis. Regelmäßige Backups bleiben sinnvoll.</div>
         </section>
       </main>
     </div>
