@@ -1,0 +1,23 @@
+E1 [FAIL] Bearbeitung während Quota-Sperre: Text (Dialog) — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Gespeichert"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E2 [FAIL] Bearbeitung während Quota-Sperre: Text (inline) — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Text gespeichert"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E3 [FAIL] Bearbeitung während Quota-Sperre: Bild drehen — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Bild gespeichert"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E4 [FAIL] Bearbeitung während Quota-Sperre: Datei ersetzen — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Datei ersetzt"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E5 [FAIL] Bearbeitung während Quota-Sperre: Sticky Note — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Sticky Note gespeichert"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E5b [FAIL] Bearbeitung während Quota-Sperre: Standardsortierung — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Standardsortierung gespeichert"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E6 [FAIL] Zwei Tabs sequenziell: Bearbeitung im gesperrten Tab B meldet "Speichern gesperrt" und überschreibt nichts
+    → B gesperrt=true; Toast="Gespeichert"; Stand von A byte-identisch=true
+E7 [FAIL] setItem verwirft den State-Write still (kein Fehler): Read-back erkennt es, Bearbeitung meldet kein "gespeichert"
+    → Toast="Gespeichert"; gespeichert unverändert=true; Status="Speichern fehlgeschlagen"; Hinweis=true
+E8 [FAIL] Normale Bearbeitung: "gespeichert" erscheint erst, wenn der Write schon verifiziert im Speicher steht
+    → dialogText: "Gespeichert", bereits gespeichert=false; inlineText: "Text gespeichert", bereits gespeichert=false; image: "Bild gespeichert", bereits gespeichert=false; stickyNote: "Sticky Note gespeichert", bereits gespeichert=false
+E9 [FAIL] AutoSave aus, Text bearbeiten: Toast nennt "nicht gespeichert", localStorage unverändert
+    → Toast="Gespeichert"; gespeichert unverändert=true
+E10 [FAIL] Cloud-Stand wird angewendet, während der Bearbeiten-Dialog offen ist: kein "gespeichert" für die verlorene Änderung
+    → Remote angewendet bei offenem Dialog=true; Änderung gespeichert=false; Toast="Gespeichert"
+written <local>/evidence/r01-results-r01-7eb65b9-_E.json

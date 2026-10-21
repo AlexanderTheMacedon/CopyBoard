@@ -1,0 +1,115 @@
+{
+  "generatedAt": "2026-10-21T21:11:17.832Z",
+  "base": "http://127.0.0.1:8768/",
+  "label": "r01-7eb65b9",
+  "browser": "Chromium (Playwright, headless)",
+  "results": [
+    {
+      "id": "E1",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Text (Dialog) — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "FAIL",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Gespeichert\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 1954
+    },
+    {
+      "id": "E2",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Text (inline) — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "FAIL",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Text gespeichert\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 1966
+    },
+    {
+      "id": "E3",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Bild drehen — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "FAIL",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Bild gespeichert\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 1998
+    },
+    {
+      "id": "E4",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Datei ersetzen — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "FAIL",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Datei ersetzt\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 1900
+    },
+    {
+      "id": "E5",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Sticky Note — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "FAIL",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Sticky Note gespeichert\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 2041
+    },
+    {
+      "id": "E5b",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Standardsortierung — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "FAIL",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Standardsortierung gespeichert\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 1968
+    },
+    {
+      "id": "E6",
+      "covers": "R01.1 · Fremd-Tab-Sperre",
+      "title": "Zwei Tabs sequenziell: Bearbeitung im gesperrten Tab B meldet \"Speichern gesperrt\" und überschreibt nichts",
+      "status": "FAIL",
+      "expected": "Toast \"Text übernommen · Speichern gesperrt\"; Stand von Tab A byte-identisch",
+      "observed": "B gesperrt=true; Toast=\"Gespeichert\"; Stand von A byte-identisch=true",
+      "ms": 2443
+    },
+    {
+      "id": "E7",
+      "covers": "R01.1 · verworfener Write",
+      "title": "setItem verwirft den State-Write still (kein Fehler): Read-back erkennt es, Bearbeitung meldet kein \"gespeichert\"",
+      "status": "FAIL",
+      "expected": "Kein \"gespeichert\"-Toast; Status \"Speichern fehlgeschlagen\"; dauerhafter Hinweis",
+      "observed": "Toast=\"Gespeichert\"; gespeichert unverändert=true; Status=\"Speichern fehlgeschlagen\"; Hinweis=true",
+      "ms": 1493
+    },
+    {
+      "id": "E8",
+      "covers": "R01.1 · Positivkontrolle",
+      "title": "Normale Bearbeitung: \"gespeichert\" erscheint erst, wenn der Write schon verifiziert im Speicher steht",
+      "status": "FAIL",
+      "expected": "Toast \"… gespeichert\" und im selben Moment ist die Änderung bereits in localStorage",
+      "observed": "dialogText: \"Gespeichert\", bereits gespeichert=false; inlineText: \"Text gespeichert\", bereits gespeichert=false; image: \"Bild gespeichert\", bereits gespeichert=false; stickyNote: \"Sticky Note gespeichert\", bereits gespeichert=false",
+      "ms": 3025
+    },
+    {
+      "id": "E9",
+      "covers": "R01.1 · Temporärmodus",
+      "title": "AutoSave aus, Text bearbeiten: Toast nennt \"nicht gespeichert\", localStorage unverändert",
+      "status": "FAIL",
+      "expected": "Toast \"Text übernommen · Temporärer Modus, nicht gespeichert\"; Stand unverändert",
+      "observed": "Toast=\"Gespeichert\"; gespeichert unverändert=true",
+      "ms": 1443
+    },
+    {
+      "id": "E10",
+      "covers": "R01.1 · verwaiste Karte (I-C05)",
+      "title": "Cloud-Stand wird angewendet, während der Bearbeiten-Dialog offen ist: kein \"gespeichert\" für die verlorene Änderung",
+      "status": "FAIL",
+      "expected": "Geht die Änderung verloren (I-C05, weiterhin offen), meldet der Toast \"nicht übernommen\" statt \"gespeichert\"",
+      "observed": "Remote angewendet bei offenem Dialog=true; Änderung gespeichert=false; Toast=\"Gespeichert\"",
+      "note": "Prüft nur die Ehrlichkeit der Meldung. Der Verlust der Änderung selbst (I-C05) bleibt offen.",
+      "ms": 6870
+    }
+  ],
+  "externalHostsRequested": [
+    "fonts.googleapis.com",
+    "cdnjs.cloudflare.com",
+    "cdn.jsdelivr.net"
+  ],
+  "supabaseContacted": false,
+  "note": "All external hosts intercepted (aborted or served locally); Supabase replaced by an in-memory mock; synthetic data only."
+}

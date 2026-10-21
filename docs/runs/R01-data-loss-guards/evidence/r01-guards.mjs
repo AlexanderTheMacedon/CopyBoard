@@ -336,6 +336,162 @@ test('A8r', 'G5 · Restrisiko', 'Zwei Tabs, gleichzeitig (5 Durchläufe): echte 
     note:'Bei verlorener Karte ist der unterlegene Tab gesperrt und bietet RAM-Export; still ist der Verlust nur, wenn kein Tab gesperrt wurde.'};
 });
 
+// ============ R01.1 · ehrliche Erfolgsmeldungen (E1–E9) ============
+// Edit toasts may claim "gespeichert" only after a verified local write. Toasts are read directly after
+// the action, before any debounce could fire, so a stale success message cannot hide behind a later save.
+const T = id => `#grid .card[data-id="${id}"] .thumb`;
+async function ctxEdit(page, id){
+  await page.click(T(id), {button:'right'}); await page.waitForSelector('#contextMenu.show');
+  await page.click('#contextMenu .ctx-row:has-text("Inhalt bearbeiten")');
+}
+const claimsSaved = toast => /gespeichert/i.test(toast) && !/nicht gespeichert/i.test(toast);
+const EDITS = {
+  dialogText: async page=>{
+    await ctxEdit(page, 't_notes'); await page.waitForSelector('#textOverlay.show');
+    await page.fill('#textArea', 'R01.1 Dialog-Bearbeitung'); await page.click('#textOkBtn');
+    return {id:'t_notes', expectRam:'R01.1 Dialog-Bearbeitung'};
+  },
+  inlineText: async page=>{
+    await page.hover(T('t_code')); await page.click('#grid .card[data-id="t_code"] .inline-text-edit-trigger');
+    await page.fill('.inline-text-editor textarea', 'R01.1 Inline-Bearbeitung'); await page.click('.inline-text-save');
+    return {id:'t_code', expectRam:'R01.1 Inline-Bearbeitung'};
+  },
+  image: async page=>{
+    await ctxEdit(page, 'i_grad'); await page.waitForSelector('#imageEditOverlay.show');
+    await page.click('#rotateRightBtn'); await page.click('#imageEditSaveBtn');
+    return {id:'i_grad'};
+  },
+  fileReplace: async page=>{
+    const fc = page.waitForEvent('filechooser');
+    await ctxEdit(page, 'f_csv');
+    await (await fc).setFiles({name:'ersetzt.csv', mimeType:'text/csv', buffer:Buffer.from('r01;1\n')});
+    await page.waitForFunction(()=>/Datei|ersetzt/.test(document.getElementById('toast').textContent), null, {timeout:5000}).catch(()=>{});
+    return {id:'f_csv'};
+  },
+  stickyNote: async page=>{
+    await page.click('#helpToggle'); await page.click('[data-help-panel="notes"]');
+    await page.fill('#helpNoteInput', 'R01.1 Sticky Note'); await page.click('#helpNoteAddBtn');
+    return {note:'R01.1 Sticky Note'};
+  },
+  defaultSort: async page=>{
+    await page.click('#helpToggle'); await page.click('[data-help-panel="settings"]');
+    await page.selectOption('#helpDefaultSortSelect', 'name');
+    return {};
+  },
+};
+// Fills the origin almost completely and pastes a card that cannot be written → quota block with unsaved RAM state.
+async function openQuotaBlocked(){
+  const app = await open({storage:L.seededStorage(SEED)});
+  const free = await measureFree(app.page);
+  await fillStorage(app.page, Math.max(0, free - 20_000));
+  await L.dispatchPaste(app.page, 'Q'.repeat(60_000)); await settle(app.page,700);
+  return app;
+}
+for(const [id, edit, label] of [['E1','dialogText','Text (Dialog)'],['E2','inlineText','Text (inline)'],['E3','image','Bild drehen'],['E4','fileReplace','Datei ersetzen'],['E5','stickyNote','Sticky Note'],['E5b','defaultSort','Standardsortierung']]){
+  test(id, 'R01.1 · Quota-Sperre', `Bearbeitung während Quota-Sperre: ${label} — kein "gespeichert", Stand unverändert, RAM behält Änderung`, async()=>{
+    const {page} = await openQuotaBlocked();
+    const blocked = await bannerShown(page), storedBefore = await raw(page);
+    const info = await EDITS[edit](page);
+    const toast = await L.toastText(page);
+    await settle(page,600);
+    const storedSame = await raw(page) === storedBefore, st = await status(page), still = await bannerShown(page);
+    let ramOk = true;
+    if(await page.$('#helpOverlay.show')) await page.click('#helpCloseBtn');
+    if(info.expectRam || info.note){
+      const backup = JSON.parse(await download(page, '#persistBackupExportBtn'));
+      ramOk = info.note ? backup.state.helpNotes.some(n=>n.text === info.note) : backup.state.data.sp_recherche.items[info.id].data === info.expectRam;
+    }
+    const ok = blocked && !claimsSaved(toast) && /übernommen · Speichern fehlgeschlagen/.test(toast) && storedSame && still && /fehlgeschlagen/.test(st) && ramOk;
+    return {status:ok?'PASS':'FAIL', expected:'Toast "… übernommen · Speichern fehlgeschlagen", kein "gespeichert"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup',
+      observed:`Sperre vorher=${blocked}; Toast="${toast}"; gespeichert byte-identisch=${storedSame}; Hinweis danach=${still}; Status="${st}"; Änderung im RAM-Backup=${ramOk}`};
+  });
+}
+test('E6', 'R01.1 · Fremd-Tab-Sperre', 'Zwei Tabs sequenziell: Bearbeitung im gesperrten Tab B meldet "Speichern gesperrt" und überschreibt nichts', async()=>{
+  const A = await open({storage:L.seededStorage(SEED)});
+  const B = await A.context.newPage(); B.setDefaultTimeout(10000);
+  await B.goto(L.BASE, {waitUntil:'load'}); await waitTabs(B);
+  await L.dispatchPaste(A.page, 'Karte aus Tab A'); await settle(A.page,800);
+  const bBlocked = await bannerShown(B), storedBefore = await raw(A.page);
+  await EDITS.dialogText(B);
+  const toast = await L.toastText(B);
+  await settle(B,600);
+  const storedSame = await raw(A.page) === storedBefore;
+  const ok = bBlocked && !claimsSaved(toast) && /Speichern gesperrt/.test(toast) && storedSame;
+  return {status:ok?'PASS':'FAIL', expected:'Toast "Text übernommen · Speichern gesperrt"; Stand von Tab A byte-identisch',
+    observed:`B gesperrt=${bBlocked}; Toast="${toast}"; Stand von A byte-identisch=${storedSame}`};
+});
+test('E7', 'R01.1 · verworfener Write', 'setItem verwirft den State-Write still (kein Fehler): Read-back erkennt es, Bearbeitung meldet kein "gespeichert"', async()=>{
+  const {page, context} = await open({storage:L.seededStorage(SEED)});
+  await context.addInitScript(k=>{
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key, v){ if(key === k && window.__r01DropWrites) return; return orig.call(this, key, v); };
+  }, KEY);
+  await page.reload(); await waitTabs(page);
+  const storedBefore = await raw(page);
+  await page.evaluate(()=>{ window.__r01DropWrites = true; });
+  await EDITS.dialogText(page);
+  const toast = await L.toastText(page);
+  await settle(page,600);
+  const storedSame = await raw(page) === storedBefore, st = await status(page), shown = await bannerShown(page);
+  const ok = !claimsSaved(toast) && /Speichern fehlgeschlagen/.test(toast) && storedSame && shown && /fehlgeschlagen/.test(st);
+  return {status:ok?'PASS':'FAIL', expected:'Kein "gespeichert"-Toast; Status "Speichern fehlgeschlagen"; dauerhafter Hinweis',
+    observed:`Toast="${toast}"; gespeichert unverändert=${storedSame}; Status="${st}"; Hinweis=${shown}`};
+});
+test('E8', 'R01.1 · Positivkontrolle', 'Normale Bearbeitung: "gespeichert" erscheint erst, wenn der Write schon verifiziert im Speicher steht', async()=>{
+  const {page} = await open({storage:L.seededStorage(SEED)});
+  const out = [];
+  for(const edit of ['dialogText','inlineText','image','stickyNote']){
+    const before = await raw(page);
+    const info = await EDITS[edit](page);
+    // read toast and storage in one evaluate, before any debounce timer could run
+    const snap = await page.evaluate(k=>({toast:document.getElementById('toast').textContent, raw:localStorage.getItem(k)}), KEY);
+    const s = JSON.parse(snap.raw);
+    const persisted = info.note ? s.helpNotes.some(n=>n.text === info.note)
+      : info.expectRam ? s.data.sp_recherche.items[info.id].data === info.expectRam
+      : snap.raw !== before;
+    out.push({edit, toast:snap.toast, persisted, ok:claimsSaved(snap.toast) && persisted});
+    if(edit === 'stickyNote') await page.click('#helpCloseBtn');
+    await settle(page,400);
+  }
+  const ok = out.every(o=>o.ok);
+  return {status:ok?'PASS':'FAIL', expected:'Toast "… gespeichert" und im selben Moment ist die Änderung bereits in localStorage',
+    observed:out.map(o=>`${o.edit}: "${o.toast}", bereits gespeichert=${o.persisted}`).join('; ')};
+});
+test('E9', 'R01.1 · Temporärmodus', 'AutoSave aus, Text bearbeiten: Toast nennt "nicht gespeichert", localStorage unverändert', async()=>{
+  const {page} = await open({storage:L.seededStorage(SEED)});
+  await page.click('#memoryToggle'); await settle(page,300);
+  const storedBefore = await raw(page);
+  await EDITS.dialogText(page);
+  const toast = await L.toastText(page);
+  await settle(page,600);
+  const storedSame = await raw(page) === storedBefore;
+  const ok = !claimsSaved(toast) && /Temporärer Modus, nicht gespeichert/.test(toast) && storedSame;
+  return {status:ok?'PASS':'FAIL', expected:'Toast "Text übernommen · Temporärer Modus, nicht gespeichert"; Stand unverändert',
+    observed:`Toast="${toast}"; gespeichert unverändert=${storedSame}`};
+});
+
+test('E10', 'R01.1 · verwaiste Karte (I-C05)', 'Cloud-Stand wird angewendet, während der Bearbeiten-Dialog offen ist: kein "gespeichert" für die verlorene Änderung', async()=>{
+  const backend = L.createCloudBackend();
+  const A = await open({storage:L.seededStorage(SEED), cloud:{backend, user:USER}});
+  await A.page.waitForFunction(()=>document.querySelector('#cloudToggle').dataset.state==='synced', null, {timeout:15000});
+  const B = await open({storage:L.seededStorage(SEED), cloud:{backend, user:USER}});
+  await B.page.waitForFunction(()=>['synced','attention'].includes(document.querySelector('#cloudToggle').dataset.state), null, {timeout:15000});
+  if(await B.page.$eval('#cloudUpdateBanner', e=>e.classList.contains('show'))){ await B.page.click('#cloudUpdateBtn'); await settle(B.page,300); if(await B.page.$eval('#confirmOverlay', e=>e.classList.contains('show'))) await B.page.click('#confirmOkBtn'); await settle(B.page,1200); }
+  await ctxEdit(B.page, 't_code'); await B.page.waitForSelector('#textOverlay.show');
+  await B.page.fill('#textArea', 'R01.1 Änderung auf B');
+  await L.dispatchPaste(A.page, 'Neues von Gerät A'); await settle(A.page,2200);
+  await B.page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange'))); await settle(B.page,1500);
+  const remoteApplied = storedTexts(await L.storedState(B.page)).includes('Neues von Gerät A');
+  await B.page.click('#textOkBtn');
+  const toast = await L.toastText(B.page);
+  await settle(B.page,600);
+  const kept = (await L.storedState(B.page)).data.sp_recherche.items.t_code.data === 'R01.1 Änderung auf B';
+  const ok = remoteApplied && (kept ? claimsSaved(toast) : !claimsSaved(toast) && /nicht übernommen/.test(toast));
+  return {status:ok?'PASS':'FAIL', expected:'Geht die Änderung verloren (I-C05, weiterhin offen), meldet der Toast "nicht übernommen" statt "gespeichert"',
+    observed:`Remote angewendet bei offenem Dialog=${remoteApplied}; Änderung gespeichert=${kept}; Toast="${toast}"`,
+    note:'Prüft nur die Ehrlichkeit der Meldung. Der Verlust der Änderung selbst (I-C05) bleibt offen.'};
+});
+
 // ============ A10 ============
 test('A10', 'Syntax', 'node --check für alle Module', async()=>{
   const files = ['src/js/app.js','src/js/config/constants.js','src/js/ui/toast.js','src/js/utils/files.js','src/js/utils/format.js'];
