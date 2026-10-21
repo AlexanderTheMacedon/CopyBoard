@@ -1,0 +1,232 @@
+[
+  {
+    "file": "screenshots/desktop-01-empty-board.png",
+    "state": "Empty board (first start, default space \"Dein CopyBoard\")",
+    "how": "Fresh profile, no storage"
+  },
+  {
+    "file": "screenshots/desktop-20-cloud-dialog-library-unavailable.png",
+    "state": "Cloud dialog, signed out, Supabase library not loadable (CDN blocked in audit sandbox)",
+    "how": "Click account button"
+  },
+  {
+    "file": "screenshots/desktop-02-populated-grid.png",
+    "state": "Populated grid: text, image, file, folder, pinned, favorite and PIN-locked cards",
+    "how": "Seeded disposable board"
+  },
+  {
+    "file": "screenshots/desktop-03-list-view.png",
+    "state": "List view of the same space",
+    "how": "Click list view toggle"
+  },
+  {
+    "file": "screenshots/desktop-04-card-hover-controls.png",
+    "state": "Card hover state: drag handle, select box, drag-out, inline edit trigger",
+    "how": "Mouse hover"
+  },
+  {
+    "file": "screenshots/desktop-05-card-context-menu.png",
+    "state": "Card context menu (text card)",
+    "how": "Right-click card"
+  },
+  {
+    "file": "screenshots/desktop-06-card-context-submenu.png",
+    "state": "Nested submenu \"Weitere Aktionen\"",
+    "how": "Hover submenu row"
+  },
+  {
+    "file": "screenshots/desktop-07-folder-context-menu.png",
+    "state": "Folder context menu (flat structure, no submenu)",
+    "how": "Right-click folder"
+  },
+  {
+    "file": "screenshots/desktop-08-space-tab-context-menu.png",
+    "state": "Space tab context menu",
+    "how": "Right-click active tab"
+  },
+  {
+    "file": "screenshots/desktop-09-background-context-menu.png",
+    "state": "Board background context menu (paste, new space, view)",
+    "how": "Right-click drop zone"
+  },
+  {
+    "file": "screenshots/desktop-10-folder-open.png",
+    "state": "Folder overlay with three child cards",
+    "how": "Click folder thumbnail"
+  },
+  {
+    "file": "screenshots/desktop-11-preview-text.png",
+    "state": "Text preview modal",
+    "how": "Click text card"
+  },
+  {
+    "file": "screenshots/desktop-12-preview-image.png",
+    "state": "Image preview modal",
+    "how": "Click image card"
+  },
+  {
+    "file": "screenshots/desktop-13-inline-text-edit.png",
+    "state": "Inline text editing inside a card",
+    "how": "Hover + inline edit trigger"
+  },
+  {
+    "file": "screenshots/desktop-14-edit-text-modal.png",
+    "state": "Edit text content modal",
+    "how": "Context menu → Inhalt bearbeiten"
+  },
+  {
+    "file": "screenshots/desktop-15-image-edit-modal.png",
+    "state": "Image edit modal (rotate/flip canvas)",
+    "how": "Context menu → Inhalt bearbeiten on image"
+  },
+  {
+    "file": "screenshots/desktop-16-inspector.png",
+    "state": "Item details inspector",
+    "how": "Context menu → Details"
+  },
+  {
+    "file": "screenshots/desktop-17-command-palette.png",
+    "state": "Command palette (actions list)",
+    "how": "Ctrl+K"
+  },
+  {
+    "file": "screenshots/desktop-18-palette-search.png",
+    "state": "Command palette full-text search hit in text content",
+    "how": "Type \"roadmap\""
+  },
+  {
+    "file": "screenshots/desktop-19-help-start.png",
+    "state": "Help & Settings center — start panel",
+    "how": "Click help/settings button"
+  },
+  {
+    "file": "screenshots/desktop-21-settings-panel.png",
+    "state": "Help & Settings center — settings panel",
+    "how": "Settings nav item"
+  },
+  {
+    "file": "screenshots/desktop-22-sticky-notes.png",
+    "state": "Help & Settings center — sticky notes",
+    "how": "Notes nav item"
+  },
+  {
+    "file": "screenshots/desktop-23-storage-over-help.png",
+    "state": "Storage manager stacked above help center (modal stack)",
+    "how": "Help → Speicher → Öffnen"
+  },
+  {
+    "file": "screenshots/desktop-24-favorites.png",
+    "state": "Favorites list",
+    "how": "Header star button"
+  },
+  {
+    "file": "screenshots/desktop-25-recent.png",
+    "state": "Recently used list",
+    "how": "Header clock button"
+  },
+  {
+    "file": "screenshots/desktop-26-multi-select-bar.png",
+    "state": "Multi-selection with floating selection bar",
+    "how": "Hover + select boxes on 3 cards"
+  },
+  {
+    "file": "screenshots/desktop-27-pin-prompt.png",
+    "state": "PIN prompt for a locked card",
+    "how": "Click locked card"
+  },
+  {
+    "file": "screenshots/desktop-28-confirm-delete.png",
+    "state": "Destructive confirmation dialog",
+    "how": "Card delete button"
+  },
+  {
+    "file": "screenshots/desktop-29-duplicate-detected.png",
+    "state": "Duplicate detected on paste (exists in another space)",
+    "how": "Paste existing text"
+  },
+  {
+    "file": "screenshots/desktop-30-duplicate-audit.png",
+    "state": "Duplicate audit dialog",
+    "how": "Palette → Duplikate prüfen"
+  },
+  {
+    "file": "screenshots/desktop-31-share-sheet.png",
+    "state": "Share sheet (no navigator.share in desktop Chromium headless)",
+    "how": "Folder → Teilen"
+  },
+  {
+    "file": "screenshots/desktop-32-many-spaces-overflow.png",
+    "state": "Many spaces: tab overflow controls",
+    "how": "Add 6 spaces"
+  },
+  {
+    "file": "screenshots/desktop-33-spaces-dropdown.png",
+    "state": "Spaces overflow dropdown",
+    "how": "Overflow button"
+  },
+  {
+    "file": "screenshots/desktop-34-cloud-dashboard-mock.png",
+    "state": "Cloud dashboard signed in (IN-MEMORY MOCK backend, not Supabase)",
+    "how": "Mocked session + click account button"
+  },
+  {
+    "file": "screenshots/mobile-01-empty-board.png",
+    "state": "Mobile empty board",
+    "how": "Fresh profile, 390x844 touch"
+  },
+  {
+    "file": "screenshots/mobile-02-populated-grid.png",
+    "state": "Mobile populated grid (above the fold)",
+    "how": "Seeded board"
+  },
+  {
+    "file": "screenshots/mobile-03-populated-full-page.png",
+    "state": "Mobile populated grid (full page)",
+    "how": "Full-page capture"
+  },
+  {
+    "file": "screenshots/mobile-04-list-view.png",
+    "state": "Mobile list view",
+    "how": "Tap list toggle"
+  },
+  {
+    "file": "screenshots/mobile-05-folder-open.png",
+    "state": "Mobile folder overlay",
+    "how": "Opened via synthetic mouse click (a touch tap opens and immediately closes it, see I-M01)"
+  },
+  {
+    "file": "screenshots/mobile-06-preview.png",
+    "state": "Mobile text preview",
+    "how": "Tap text card"
+  },
+  {
+    "file": "screenshots/mobile-07-help.png",
+    "state": "Mobile help & settings",
+    "how": "Tap help"
+  },
+  {
+    "file": "screenshots/mobile-08-settings.png",
+    "state": "Mobile settings panel",
+    "how": "Settings nav"
+  },
+  {
+    "file": "screenshots/mobile-09-cloud-dialog.png",
+    "state": "Mobile cloud dialog (library unavailable in sandbox)",
+    "how": "Tap account"
+  },
+  {
+    "file": "screenshots/mobile-10-command-palette.png",
+    "state": "Mobile command palette",
+    "how": "Tap search"
+  },
+  {
+    "file": "screenshots/mobile-11-context-menu-via-right-click.png",
+    "state": "Mobile context menu (opened via synthetic right-click; long-press on real devices NOT VERIFIED)",
+    "how": "Synthetic contextmenu"
+  },
+  {
+    "file": "screenshots/tablet-01-populated-grid.png",
+    "state": "Tablet portrait populated grid",
+    "how": "Seeded board, 820x1180"
+  }
+]
