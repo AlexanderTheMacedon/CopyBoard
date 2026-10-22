@@ -1,0 +1,416 @@
+{
+  "generatedAt": "2026-10-22T02:11:34.881Z",
+  "baselineFile": "qa-results-r01.1-77a2fcf.json",
+  "r01File": "qa-results-r02-ce2a64e.json",
+  "total": 58,
+  "baseline": {
+    "PASS": 24,
+    "DEFECT": 26,
+    "OBSERVATION": 5,
+    "NOT VERIFIED": 2,
+    "BLOCKED": 1
+  },
+  "r01": {
+    "PASS": 30,
+    "DEFECT": 19,
+    "OBSERVATION": 6,
+    "NOT VERIFIED": 2,
+    "BLOCKED": 1
+  },
+  "changed": [
+    {
+      "id": "I-02",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "Paste while focus is in unrelated text inputs (palette search, sticky note, cloud e-mail, PIN, inline editor; folder title as control)"
+    },
+    {
+      "id": "I-13",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "Hover + Space bar on a normal card and on a PIN-locked card"
+    },
+    {
+      "id": "I-25",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "ZIP download of a folder that contains a PIN-locked image (lock seeded; the in-folder menu is unusable, see I-46)"
+    },
+    {
+      "id": "I-31",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "Stored XSS: space name rendered via \"In anderen Space kopieren\" picker"
+    },
+    {
+      "id": "I-32",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "Stored XSS: imported space \"color\" rendered in the space context menu"
+    },
+    {
+      "id": "I-39",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "Command palette: content search, arrow keys, Enter opens result in folder"
+    },
+    {
+      "id": "I-33b",
+      "baseline": "DEFECT",
+      "r01": "OBSERVATION",
+      "action": "Imported file item whose data is a javascript: URL, then \"Herunterladen\""
+    }
+  ],
+  "passRegressions": [],
+  "status": "PASS",
+  "rows": [
+    {
+      "id": "I-01",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Ctrl/Cmd+V text with focus on board body"
+    },
+    {
+      "id": "I-02",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "Paste while focus is in unrelated text inputs (palette search, sticky note, cloud e-mail, PIN, inline editor; folder title as control)"
+    },
+    {
+      "id": "I-03",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "\"Zwischenablage\" button pre-fills modal from system clipboard, \"Ablegen\" creates card"
+    },
+    {
+      "id": "I-04",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "File picker: PNG + TXT + PDF, then an 8 MiB+1 file"
+    },
+    {
+      "id": "I-05",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Paste text that already exists in another space → \"Vorhandenes zeigen\""
+    },
+    {
+      "id": "I-06",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Upload two files at once that are both duplicates of existing items"
+    },
+    {
+      "id": "I-07",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Click card → preview; Escape closes; focus returns"
+    },
+    {
+      "id": "I-08",
+      "baseline": "OBSERVATION",
+      "r01": "OBSERVATION",
+      "action": "Double-click a card"
+    },
+    {
+      "id": "I-09",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Right-click opens; Escape / outside click close; submenu via hover and click; viewport clamping"
+    },
+    {
+      "id": "I-10",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Escape with a card context menu open inside an open folder"
+    },
+    {
+      "id": "I-11",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Inline text edit: 4 flows (top level / inside folder × typing directly / clicking into the editor first), then Escape and one click elsewhere"
+    },
+    {
+      "id": "I-12",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Inline edit: Ctrl+Enter saves, Ctrl+Z restores"
+    },
+    {
+      "id": "I-13",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "Hover + Space bar on a normal card and on a PIN-locked card"
+    },
+    {
+      "id": "I-14",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Ctrl+Z after each mutation type, then Ctrl+Shift+Z"
+    },
+    {
+      "id": "I-15",
+      "baseline": "OBSERVATION",
+      "r01": "OBSERVATION",
+      "action": "Undo after switching to another space"
+    },
+    {
+      "id": "I-16",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Drag a selected stack of 2 cards onto another space tab, then one Ctrl+Z"
+    },
+    {
+      "id": "I-17",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Undo directly after a full board import"
+    },
+    {
+      "id": "I-18",
+      "baseline": "OBSERVATION",
+      "r01": "OBSERVATION",
+      "action": "Undo history after reload"
+    },
+    {
+      "id": "I-19",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Drag card onto another card → folder; drag reorder; drag onto another space tab"
+    },
+    {
+      "id": "I-20",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Drag reorder while sort mode is not manual"
+    },
+    {
+      "id": "I-21",
+      "baseline": "NOT VERIFIED",
+      "r01": "NOT VERIFIED",
+      "action": "Drag a card out to desktop (DownloadURL)"
+    },
+    {
+      "id": "I-22",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Select two folders and choose \"In Ordner\""
+    },
+    {
+      "id": "I-23",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Shift-click range, \"Alle auswählen\", selection bar actions (duplicate, delete)"
+    },
+    {
+      "id": "I-24",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Folder header actions: rename via title, ZIP download, child delete button, dissolve"
+    },
+    {
+      "id": "I-46",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Use a card context menu inside an open folder"
+    },
+    {
+      "id": "I-25",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "ZIP download of a folder that contains a PIN-locked image (lock seeded; the in-folder menu is unusable, see I-46)"
+    },
+    {
+      "id": "I-26",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Lock a text card: storage contents, wrong/right PIN, unlock"
+    },
+    {
+      "id": "I-27",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Create burn link; open it twice in separate browser contexts"
+    },
+    {
+      "id": "I-28",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Add, rename (title / tab pencil / dropdown), duplicate, export, clear, delete, drag reorder"
+    },
+    {
+      "id": "I-29",
+      "baseline": "OBSERVATION",
+      "r01": "OBSERVATION",
+      "action": "Rename a space while the tab overflow dropdown is used on a narrow screen"
+    },
+    {
+      "id": "I-30",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Keyboard-only: can cards be focused and opened?"
+    },
+    {
+      "id": "I-31",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "Stored XSS: space name rendered via \"In anderen Space kopieren\" picker"
+    },
+    {
+      "id": "I-32",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "Stored XSS: imported space \"color\" rendered in the space context menu"
+    },
+    {
+      "id": "I-33",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "File name / text content rendering in cards, preview, search"
+    },
+    {
+      "id": "I-34",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Export full backup, modify board, re-import, restore pre-import recovery"
+    },
+    {
+      "id": "I-35",
+      "baseline": "BLOCKED",
+      "r01": "BLOCKED",
+      "action": "Start with a stored board of an unsupported (newer) schema version or corrupt JSON"
+    },
+    {
+      "id": "I-36",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Real localStorage quota vs. the 20 MiB board limit"
+    },
+    {
+      "id": "I-37",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "AutoSave off: changes are temporary; leaving prompts"
+    },
+    {
+      "id": "I-38",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Confirmations off, default sort for new spaces, start space; settings export"
+    },
+    {
+      "id": "I-39",
+      "baseline": "DEFECT",
+      "r01": "PASS",
+      "action": "Command palette: content search, arrow keys, Enter opens result in folder"
+    },
+    {
+      "id": "I-40",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Stacked modals: Help → Storage → Esc → Esc; storage → preview child"
+    },
+    {
+      "id": "I-41",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Copy text, image and PDF card to the system clipboard"
+    },
+    {
+      "id": "I-42",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Voice memo with a fake microphone"
+    },
+    {
+      "id": "I-43",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "OCR flow with a stubbed Tesseract (library not loaded from CDN)"
+    },
+    {
+      "id": "I-44",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Palette extraction and image rotate/save + undo"
+    },
+    {
+      "id": "I-45",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Delete largest entry from storage manager"
+    },
+    {
+      "id": "I-M01",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Tap a card on a 390 px touch viewport with the card near the bottom vs. centered"
+    },
+    {
+      "id": "I-M02",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Vertical swipe that starts on a card thumbnail vs. outside cards"
+    },
+    {
+      "id": "I-M03",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Multi-select and hover-only controls without a mouse"
+    },
+    {
+      "id": "I-M04",
+      "baseline": "NOT VERIFIED",
+      "r01": "NOT VERIFIED",
+      "action": "Long-press for context menu"
+    },
+    {
+      "id": "I-M05",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Fixed bottom controls vs. content on mobile"
+    },
+    {
+      "id": "I-V01",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Favorite badge position vs. delete button"
+    },
+    {
+      "id": "I-33b",
+      "baseline": "DEFECT",
+      "r01": "OBSERVATION",
+      "action": "Imported file item whose data is a javascript: URL, then \"Herunterladen\""
+    },
+    {
+      "id": "I-C01",
+      "baseline": "PASS",
+      "r01": "PASS",
+      "action": "Supabase library unavailable (CDN blocked) → local-first behavior"
+    },
+    {
+      "id": "I-C02",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Initial upload; then only viewing a card and switching spaces"
+    },
+    {
+      "id": "I-C03",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Two devices: second device first sign-in, concurrent edits, dismiss, reload"
+    },
+    {
+      "id": "I-C04",
+      "baseline": "OBSERVATION",
+      "r01": "OBSERVATION",
+      "action": "Sign out, then a different account signs in on the same browser profile"
+    },
+    {
+      "id": "I-C05",
+      "baseline": "DEFECT",
+      "r01": "DEFECT",
+      "action": "Remote snapshot is applied while the \"Inhalt bearbeiten\" dialog is open on another device"
+    }
+  ]
+}

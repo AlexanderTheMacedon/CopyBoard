@@ -1,0 +1,59 @@
+X1 [PASS] Space-Name mit HTML-Payload: Umbenennen, Space-Picker, Dropdown, Palette, Bestätigung
+    → Handler ausgeführt=0; Picker zeigt Namen als Text=true; Bestätigungstext enthält Namen als Text=true
+X1b [PASS] Board-Import mit Space-Namen als Payload: Tabs, Space-Picker, Menüs
+    → Handler ausgeführt=0; Picker-Zeilen=["<img src=x onerror=\"window.__xss=(window.__xss||0)+1\">","<svg onload=\"window.__xss=(window.__xss||0)+1\">"]
+X2 [PASS] Space-Import mit Farb-Payload: Kontextmenü, Tab, Dropdown; Farbe verworfen
+    → Handler ausgeführt=0; gespeicherte Farbe=undefined
+X2b [PASS] Board-Import mit ungültigen Farben in state.spaces; legitime Hex-Farben bleiben
+    → Farben={"sp_recherche":"#4f6bff","sp_privat":null,"sp_archiv":null,"sp_short":"#abc"}; Handler=0; example.invalid angefragt=false
+X2c [PASS] Farbe über den Picker wählen: Hex gespeichert, Swatch im Menü sichtbar
+    → gespeichert=#ff6b57; Swatch=rgb(255, 107, 87)
+X3 [PASS] Import mit javascript:/vbscript:/http:/blob:-Daten: Herunterladen, Vorschau, Kopieren
+    → Handler=0; URL unverändert=true; gespeichert: f_js:null, f_js2:null, f_vbs:null, f_http:null, f_blob:null, i_js:null, a_js:null; f_js: Download=keiner, Toast="Download nicht möglich · Dateiinhalt fehlt oder ist ungültig"; f_js2: Download=keiner, Toast="Download nicht möglich · Dateiinhalt fehlt oder ist ungültig"; f_vbs: Download=keiner, Toast="Download nicht möglich · Dateiinhalt fehlt oder ist ungültig"; f_http: Download=keiner, Toast="Download nicht möglich · Dateiinhalt fehlt oder ist ungültig"; f_blob: Download=keiner, Toast="Download nicht möglich · Dateiinhalt fehlt oder ist ungültig"; i_js: Download=keiner, Toast="Download nicht möglich · Dateiinhalt fehlt oder ist ungültig"; a_js: Download=keiner, Toast="Download nicht möglich · Dateiinhalt fehlt oder ist ungültig"; example.invalid angefragt=false
+X3b [PASS] Bereits gespeicherter javascript:-Eintrag aus einem Alt-Import: Herunterladen nach dem Laden
+    → Handler=0; Download=keiner; Toast="Download nicht möglich · Dateiinhalt fehlt oder ist ungültig"
+X4 [PASS] Legitime Datei, CSV, Bild und Text herunterladen: Bytes identisch, keine Navigation
+    → f_pdf: "angebot-entwurf.pdf" identisch=true; f_csv: "messwerte.csv" identisch=true; i_grad: "skizze-verlauf.png" identisch=true; t_notes: "Meeting-Notizen Q4_ Roadmap abstimmen, B….txt" identisch=true; Kontextmenü f_pdf identisch=true; URL unverändert=true
+X5 [PASS] Import mit MIME-Payloads: ungültige ersetzt, legitime unverändert
+    → {"m_ok1":"application/vnd.openxmlformats-officedocument.wordprocessingml.document","m_ok2":"audio/webm;codecs=opus","m_ok3":"image/svg+xml","m_ok4":"text/plain; charset=\"utf-8\"","m_bad1":"application/octet-stream","m_bad2":"application/octet-stream","m_bad3":"application/octet-stream"}
+X6 [PASS] Bestandsboard, Backup v1, Legacy-Rohformat und Space-Export bleiben verlustfrei
+    → Bestand: true; Backup v1: true; Legacy-Rohformat: true; Space-Export → Import: true
+P1 [PASS] Paste in jedes sensible bzw. editierbare Feld erzeugt keine Karte
+    → Palette-Suche: keine Karte; Sticky Note: keine Karte; Cloud-E-Mail: keine Karte; Cloud-Passwort: keine Karte; Cloud-Passwort bestätigen: keine Karte; PIN: keine Karte; Inline-Texteditor: keine Karte; Text-Dialog (bewusste Erfassung): keine Karte; Karte umbenennen: keine Karte; Board-Titel: keine Karte; Ordnertitel: keine Karte; Tab umbenennen: keine Karte; contenteditable: keine Karte; contenteditable (Kindelement): keine Karte; Shadow-DOM-Passwortfeld: keine Karte; role=textbox: keine Karte; Dialog offen, Fokus auf Schaltfläche: keine Karte
+P1k [PASS] Echtes Strg/Cmd+V in Cloud-E-Mail und Cloud-Passwort: Paste-Ereignis erreicht das Feld, keine Karte
+    → #cloudEmailInput: Ereignisse=["cloudEmailInput"], Feldwert="R02-Passwort-Dummy", neue Karten=0; #cloudPasswordInput: Ereignisse=["cloudPasswordInput"], Feldwert="R02-Passwort-Dummy", neue Karten=0
+P2 [PASS] Paste aufs Board, bei offenem Ordner, Text-Dialog, Kontextmenü „Einfügen“, Bild-Paste
+    → Board (synthetisch): true; Board (echte Tastatur): true; offener Ordner, Fokus nicht im Feld: true; Text-Dialog „Ablegen“: true; Kontextmenü „Einfügen“: true; Bild-Paste: true
+P3 [PASS] Text in das Cloud-Passwortfeld ziehen: keine Karte; Text aufs Board ziehen: Karte
+    → Karten vorher 14, nach Drop ins Feld 14, nach Drop aufs Board 15
+B1 [PASS] Schnellvorschau (Hover + Leertaste) auf gesperrter Karte
+    → normal=true; gesperrt: PIN-Abfrage=true, Vorschau=false
+B2 [PASS] Suche → Enter auf gesperrter Karte
+    → PIN-Abfrage=true, Vorschau=false
+B3 [PASS] Details → „Vorschau öffnen“ auf gesperrter Karte
+    → PIN-Abfrage=true, Vorschau=false
+B4 [PASS] Speicherstatus → Vorschau einer gesperrten Karte
+    → PIN-Abfrage=true, Vorschau=false
+B5 [PASS] Favoriten- und Verlaufseintrag einer gesperrten Karte öffnen
+    → Favoriten: PIN-Abfrage=true, Vorschau=false
+B6 [PASS] Kontextmenü und Kartenschaltflächen einer gesperrten Karte bieten keinen Inhaltszugriff
+    → Menü=["Mit PIN anzeigen","PIN entfernen","Details","Umbenennen","Zu Favoriten hinzufügen","Löschen"]; Inline-Editor=false; Drag-out=false
+B7 [PASS] PIN-entsperrte Vorschau ist schreibgeschützt; Kopieren/Herunterladen liefern den Klartext
+    → Klartext sichtbar=true; Schaltflächen=[{"t":"Kopieren","disabled":false},{"t":"Inhalt bearbeiten","disabled":true},{"t":"Herunterladen","disabled":false}]; Editor geöffnet=false; Zwischenablage=Klartext true; Download=Klartext true; gespeicherte Karte unverändert=true
+B8 [PASS] Umgehungsvorschau → „Inhalt bearbeiten“ → Speichern darf die gesperrte Karte nicht mit Klartext überschreiben
+    → Pfad: keine Vorschau; gespeichert unverändert=true; halb gesperrt (locked + Klartext)=false
+B9 [PASS] Falscher PIN und beschädigte PIN-Daten: keine Vorschau, ehrliche Meldung, Karte unverändert
+    → falscher PIN: Toast "Falscher PIN", Vorschau=false; beschädigt: Toast "Entschlüsselung fehlgeschlagen · PIN-Daten sind beschädigt oder unvollständig", Vorschau=false; PIN entfernen: "Entschlüsselung fehlgeschlagen · PIN-Daten sind beschädigt oder unvollständig"; unverändert=true
+C1 [PASS] Format-Kompatibilität in beide Richtungen: Node-Vektor → App, App → Node-Referenz
+    → Referenz=Original true; Salt/IV-Längen ok=true; Seed entsperrt=true, Felder entfernt=true
+C1b [PASS] PIN mit Leerzeichen und NFC-Umlaut: nur die exakte Eingabe entsperrt
+    → {"trimmed":"Falscher PIN","nfd":"Falscher PIN","exact":"entsperrt"}
+C2 [PASS] Großes Bild (~1,4 MB) und große Datei (~600 KB) sperren, extern prüfen, ansehen, entsperren
+    → gross.png: 1961642 Zeichen → Chiffrat 2615544, gesperrt=true, Referenz=Original true, Toast "PIN-Sperre gespeichert"; gross.bin: 819237 Zeichen → Chiffrat 1092340, gesperrt=true, Referenz=Original true, Toast "PIN-Sperre gespeichert"; Bildbreite nach PIN=700; Datei entsperrt identisch=true; Download identisch=true; Seitenfehler=[]
+C3 [PASS] Sperren einer Karte, deren Chiffrat nicht mehr in den lokalen Speicher passt
+    → Toast="Sperren nicht möglich · verschlüsselte Karte passt nicht in den lokalen Speicher"; gespeichert unverändert=true; UI gesperrt=false; Strg+Z: "Nichts zum Rückgängigmachen"; Seitenfehler=[]
+C4 [PASS] crypto.subtle.encrypt schlägt fehl: keine halbe Sperre, kein Erfolg, kein Undo-Eintrag
+    → Toast="Sperren fehlgeschlagen · Karte bleibt unverändert"; gespeichert unverändert=true; UI gesperrt=false; Strg+Z: "Nichts zum Rückgängigmachen"; Seitenfehler=[]
+C5 [PASS] Backup v1 und Legacy-Rohformat mit PIN-Karten importieren und entsperren
+    → Backup v1: true; Legacy-Rohformat: true
+written /Users/alexanderstambke/Developer/CopyBoard 2/docs/runs/R02-security-privacy-hardening/evidence/r02-results-r02-ce2a64e.json
