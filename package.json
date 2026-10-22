@@ -1,0 +1,32 @@
+{
+  "name": "copyboard",
+  "version": "0.0.0-foundation-a",
+  "private": true,
+  "type": "module",
+  "description": "CopyBoard — local-first clipboard workspace. Legacy ESM app plus Vite/TypeScript foundation.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "jszip": "3.10.1",
+    "playwright": "1.63.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.legacy.json",
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "test:unit": "vitest run",
+    "test:smoke": "npm run build && node scripts/e2e.mjs smoke",
+    "test:smoke:dev": "node scripts/e2e.mjs smoke --target=dev",
+    "test:e2e:full": "npm run build && node scripts/e2e.mjs full",
+    "test": "npm run check:syntax && npm run typecheck && npm run test:unit",
+    "ci": "npm run test && npm run test:smoke",
+    "playwright:install": "playwright install chromium"
+  }
+}

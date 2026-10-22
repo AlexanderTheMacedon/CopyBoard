@@ -27,6 +27,19 @@ Then open [http://localhost:8000](http://localhost:8000).
 
 A local web server is required because CopyBoard uses native JavaScript modules. No package installation or build step is needed.
 
+### Development tooling (Vite + TypeScript)
+
+Optional tooling for development and CI; the app itself still needs no build. Requires Node 22.12+.
+
+```bash
+npm ci && npm run dev      # dev server at http://127.0.0.1:5173/
+npm run build              # production build in dist/
+npm test                   # syntax check, typecheck, unit tests
+npm run test:smoke         # build + Playwright smoke (needs `npx playwright install chromium` once)
+```
+
+Details: [docs/foundation/README.md](docs/foundation/README.md).
+
 ## Data and privacy
 
 CopyBoard stores the working board in the browser first. Cloud sync is optional and uses the signed-in Supabase user ID as the ownership boundary. Signing out does not remove the local board.

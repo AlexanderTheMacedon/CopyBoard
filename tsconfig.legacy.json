@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": false,
+    "noUncheckedIndexedAccess": false,
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": ["src/js/config", "src/js/utils"]
+}

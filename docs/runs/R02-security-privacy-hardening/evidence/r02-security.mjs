@@ -15,7 +15,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const EVIDENCE_DIR = path.dirname(fileURLToPath(import.meta.url));
+// R02_OUT_DIR (foundation sprint A): lets npm/CI runs write the result JSON outside the committed evidence folder.
+const EVIDENCE_DIR = process.env.R02_OUT_DIR ? path.resolve(process.env.R02_OUT_DIR) : path.dirname(fileURLToPath(import.meta.url));
+fs.mkdirSync(EVIDENCE_DIR, {recursive:true});
 const LABEL = process.env.R02_LABEL || 'run';
 const only = process.argv[2] ? new RegExp(process.argv[2]) : null;
 const KEY = 'copyboard_state_v1';
@@ -605,3 +607,7 @@ const outFile = path.join(EVIDENCE_DIR, `r02-results-${LABEL}${only ? '-'+proces
 fs.writeFileSync(outFile, JSON.stringify({generatedAt:new Date().toISOString(), base:L.BASE, label:LABEL, browser:'Chromium (Playwright, headless)', results, externalHostsRequested:external,
   supabaseContacted:external.some(h=>/supabase\.co$/.test(h)), note:'All external hosts intercepted (aborted or served locally); Supabase replaced by an in-memory mock; synthetic data only.'}, null, 2));
 console.log('written', outFile);
+// Foundation sprint A: a red test must fail the process (CI). No test matched is a failure too.
+const failedIds = results.filter(r=>r.status !== 'PASS' && r.status !== 'SKIP').map(r=>r.id);
+console.log(`summary: ${results.filter(r=>r.status==='PASS').length} PASS, ${failedIds.length} FAIL, ${results.filter(r=>r.status==='SKIP').length} SKIP of ${results.length}`);
+if(!results.length || failedIds.length){ console.error('FAILED: '+(failedIds.join(', ') || 'no tests ran')); process.exitCode = 1; }
