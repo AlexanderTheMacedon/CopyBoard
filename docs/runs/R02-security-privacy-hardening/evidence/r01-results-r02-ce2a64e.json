@@ -1,0 +1,260 @@
+{
+  "generatedAt": "2026-10-22T02:08:23.523Z",
+  "base": "http://127.0.0.1:8769/",
+  "label": "r02-ce2a64e",
+  "browser": "Chromium (Playwright, headless)",
+  "results": [
+    {
+      "id": "A1",
+      "covers": "G1 · I-35",
+      "title": "Gespeicherter State: schemaVersion:2 — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload",
+      "status": "PASS",
+      "expected": "Key byte-identisch nach Start, 5 s, Paste und Reload; Hinweis sichtbar; Paste abgelehnt; Rohdaten-Export = Original; keine Cloud-Operation",
+      "observed": "identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true \"Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt.\"; Paste abgelehnt=true (Toast \"Speichern gesperrt — neue Inhalte werden nicht angenommen\"); Export=Original: true (27170 Zeichen); Status=\"Speichern gesperrt\"; Cloud-Operationen=0 (Schreibend 0)",
+      "ms": 7946
+    },
+    {
+      "id": "A2",
+      "covers": "G1 · I-35",
+      "title": "Gespeicherter State: abgeschnittenes JSON — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload",
+      "status": "PASS",
+      "expected": "Key byte-identisch nach Start, 5 s, Paste und Reload; Hinweis sichtbar; Paste abgelehnt; Rohdaten-Export = Original; keine Cloud-Operation",
+      "observed": "identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true \"Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt.\"; Paste abgelehnt=true (Toast \"Speichern gesperrt — neue Inhalte werden nicht angenommen\"); Export=Original: true (5000 Zeichen); Status=\"Speichern gesperrt\"; Cloud-Operationen=0 (Schreibend 0)",
+      "ms": 7878
+    },
+    {
+      "id": "A2b",
+      "covers": "G1 · I-35",
+      "title": "Gespeicherter State: settings.schemaVersion:2 — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload",
+      "status": "PASS",
+      "expected": "Key byte-identisch nach Start, 5 s, Paste und Reload; Hinweis sichtbar; Paste abgelehnt; Rohdaten-Export = Original; keine Cloud-Operation",
+      "observed": "identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true \"Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt.\"; Paste abgelehnt=true (Toast \"Speichern gesperrt — neue Inhalte werden nicht angenommen\"); Export=Original: true (27170 Zeichen); Status=\"Speichern gesperrt\"; Cloud-Operationen=0 (Schreibend 0)",
+      "ms": 7876
+    },
+    {
+      "id": "A2c",
+      "covers": "G1 · I-35",
+      "title": "Gespeicherter State: JSON-Array statt Objekt — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload",
+      "status": "PASS",
+      "expected": "Key byte-identisch nach Start, 5 s, Paste und Reload; Hinweis sichtbar; Paste abgelehnt; Rohdaten-Export = Original; keine Cloud-Operation",
+      "observed": "identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true \"Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt.\"; Paste abgelehnt=true (Toast \"Speichern gesperrt — neue Inhalte werden nicht angenommen\"); Export=Original: true (7 Zeichen); Status=\"Speichern gesperrt\"; Cloud-Operationen=0 (Schreibend 0)",
+      "ms": 7852
+    },
+    {
+      "id": "A3",
+      "covers": "G2 · I-36",
+      "title": "Rausch-PNGs bis zur Grenze: Ablehnung vor dem Fehlschlag, Kartenzahl UI = gespeichert = nach Reload",
+      "status": "PASS",
+      "expected": "Erfassung wird vor dem echten Quota-Fehler abgelehnt; keine Karte geht beim Reload verloren",
+      "observed": "#1: Karten 1, Status \"Gespeichert um 04:07:05\", Toast \"\"; #2: Karten 2, Status \"Gespeichert um 04:07:06\", Toast \"\"; #3: Karten 2, Status \"Gespeichert um 04:07:06\", Toast \"Lokales Speicherlimit erreicht — lösche oder exportiere große Inhalte\"; #4: Karten 2, Status \"Gespeichert um 04:07:06\", Toast \"Lokales Speicherlimit erreicht — lösche oder exportiere große Inhalte\"; abgelehnt bei Bild 3; Speichern je fehlgeschlagen=false; UI=2, gespeichert=2 (3924041 Zeichen), nach Reload=2",
+      "ms": 4950
+    },
+    {
+      "id": "A3b",
+      "covers": "G2 · I-36 / Save-ACK",
+      "title": "Echter Quota-Fehler (Speicher künstlich verknappt): dauerhafter Hinweis, kein \"Gespeichert\", Erfassung gesperrt, RAM-Export rettet",
+      "status": "PASS",
+      "expected": "setItem-Fehler → Sperre quota, dauerhafter Hinweis, gespeicherter Stand unverändert, neue Erfassung abgelehnt, Backup aus RAM enthält ungespeicherte Karte",
+      "observed": "Hinweis=true \"Nicht gespeichert: Der Browser-Speicher ist voll. Lösche große Inhalte oder exportiere ein Backup.\"; Status=\"Speichern fehlgeschlagen\"; gespeicherter Stand unverändert=true; UI-Karten=2; Paste abgelehnt=true (Toast \"Speicher voll — zuerst Inhalte löschen oder ein Backup exportieren\"); RAM-Backup Karten=2 (Format copyboard-backup v1); Verlassen-Warnung=true",
+      "ms": 3204
+    },
+    {
+      "id": "A4",
+      "covers": "G2 · Quota-Recovery-Commit",
+      "title": "Wie A3b, dann gespeicherte Karte löschen: verifizierter Save hebt Sperre auf, Erfassung wieder möglich",
+      "status": "PASS",
+      "expected": "Löschen bleibt erlaubt; nächster verifizierter Save (inkl. der zuvor ungespeicherten Karte) hebt die Sperre auf; Erfassung danach wieder möglich",
+      "observed": "Hinweis nach Löschen=false; Status=\"Gespeichert um 04:07:13\"; gespeichert: zuvor ungespeichertes Bild übernommen=true; neuer Paste gespeichert=true; UI=2, nach Reload=2",
+      "ms": 2127
+    },
+    {
+      "id": "S1",
+      "covers": "G2 · Save-ACK vs. Zeitstempel",
+      "title": "Schreiben von copyboard_autosave_last_saved scheitert, State-Write gelingt",
+      "status": "PASS",
+      "expected": "State gespeichert → Status \"Gespeichert\"; gescheiterter Zeitstempel ist kein Save-Fehler",
+      "observed": "State gespeichert=true; Status=\"Gespeichert um 04:07:16\"; Sperr-Hinweis=false",
+      "ms": 1418
+    },
+    {
+      "id": "A5",
+      "covers": "G3 · N4",
+      "title": "Board mit 3,3 M Zeichen, Backup-Import, Recovery-Kopie passt nicht in den Speicher",
+      "status": "PASS",
+      "expected": "Import abgebrochen, gespeichertes Board byte-identisch, Toast nennt Grund",
+      "observed": "Board 3301172 Zeichen; nach Import byte-identisch=true; UI zeigt alten Stand=true; Recovery-Key vorhanden=false; Toast=\"Import abgebrochen: Sicherung konnte nicht angelegt werden. Exportiere zuerst ein Backup.\"",
+      "ms": 2375
+    },
+    {
+      "id": "A5b",
+      "covers": "G3 · N4 (Cloud)",
+      "title": "Manuelles \"Aktualisieren\" bei lokalen Änderungen, Recovery-Kopie passt nicht",
+      "status": "PASS",
+      "expected": "Laden abgebrochen, lokaler Stand inkl. ungesyncter Änderung byte-identisch, Cloud unverändert",
+      "observed": "Update-Banner=true; lokal byte-identisch=true; lokale Änderung erhalten=true; Toast=\"Laden abgebrochen: Sicherung konnte nicht angelegt werden. Exportiere zuerst ein Backup.\"; Cloud-Revision=2; Cloud-Schreibops danach=[]",
+      "ms": 4750
+    },
+    {
+      "id": "A6",
+      "covers": "G4 · N3",
+      "title": "Mock-Snapshot 6,3 M Zeichen, leeres Gerät, danach Reload",
+      "status": "PASS",
+      "expected": "Snapshot nicht angewendet; Backend-Revision bleibt 1; Originalobjekt bleibt; kein Upload; keine Cloud-Meta",
+      "observed": "Status Start=\"error / Cloud-Stand ist zu groß für den lokalen Speicher dieses Browsers\"; nach Reload=\"error / Cloud-Stand ist zu groß für den lokalen Speicher dieses Browsers\"; lokale Cloud-Meta=null; lokaler State 425 Zeichen; Backend-Revision=1; Originalobjekt vorhanden=true; Cloud-Schreibops=[]",
+      "ms": 6973
+    },
+    {
+      "id": "A6b",
+      "covers": "G4 · Abort/Restore",
+      "title": "Synchronisiertes Gerät, neuer Cloud-Stand (3 M) passt nicht in den verknappten Speicher → Rollback",
+      "status": "PASS",
+      "expected": "Lokaler Commit scheitert → vorheriger State aktiv, Meta unverändert, Status nennt Grund, kein Upload/Löschen, auch nach Reload",
+      "observed": "vor Reload {\"localSame\":true,\"metaSame\":true,\"ui\":true,\"banner\":false,\"st\":\"error / Cloud-Stand konnte lokal nicht gespeichert werden — vorheriger Stand bleibt aktiv\"}; nach Reload {\"localSame\":true,\"metaSame\":true,\"ui\":true,\"banner\":false,\"st\":\"error / Cloud-Stand konnte lokal nicht gespeichert werden — vorheriger Stand bleibt aktiv\"}; Backend-Revision=2; Objekt rev2 vorhanden=true; Cloud-Schreibops=[]; Füller=4515296 Zeichen",
+      "ms": 8492
+    },
+    {
+      "id": "A7",
+      "covers": "G4 · N3b",
+      "title": "Gescheiterter Save, dann \"Jetzt synchronisieren\"",
+      "status": "PASS",
+      "expected": "Kein Upload, Revision unverändert, Status nennt den Grund",
+      "observed": "Autosave-Status=\"Speichern fehlgeschlagen\"; Sperr-Hinweis=true; Revision 1→1; Cloud-Schreibops=[]; Sync-Status=\"Lokale Änderungen nicht gespeichert – Upload angehalten\"",
+      "ms": 3405
+    },
+    {
+      "id": "A8",
+      "covers": "G5 · N8",
+      "title": "Zwei Tabs, sequenziell: Tab A speichert, dann Paste im veralteten Tab B; danach Neu laden",
+      "status": "PASS",
+      "expected": "Veralteter Tab wird gesperrt, überschreibt nichts; nach Neu laden sieht er den fremden Stand; beide Karten bleiben erhalten",
+      "observed": "B gesperrt nach Write von A=true \"In einem anderen Tab geändert. Neu laden, um weiterzuarbeiten.\"; Karte A erhalten=true; veralteter Paste in B abgelehnt=true; B nach Neu laden sieht A und ist frei=true; A gesperrt nach Write von B=true; final beide Karten gespeichert=true; A zeigt nach Reload 2 Karten",
+      "ms": 4451
+    },
+    {
+      "id": "A8r",
+      "covers": "G5 · Restrisiko",
+      "title": "Zwei Tabs, gleichzeitig (5 Durchläufe): echte Schreibrennen",
+      "status": "RISK",
+      "expected": "Keine Garantie in R01: storage-Events sind nicht atomar; echte Single-Writer-Sicherheit erst mit Web Locks (R05)",
+      "observed": "#1: gespeichert A/B=true/false, gesperrt A/B=true/true; #2: gespeichert A/B=false/true, gesperrt A/B=true/true; #3: gespeichert A/B=true/false, gesperrt A/B=true/true; #4: gespeichert A/B=false/true, gesperrt A/B=true/true; #5: gespeichert A/B=true/false, gesperrt A/B=true/true; Durchläufe mit nicht gespeicherter Karte: 5/5",
+      "note": "Bei verlorener Karte ist der unterlegene Tab gesperrt und bietet RAM-Export; still ist der Verlust nur, wenn kein Tab gesperrt wurde.",
+      "ms": 8470
+    },
+    {
+      "id": "E1",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Text (Dialog) — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "PASS",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Text übernommen · Speichern fehlgeschlagen\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 1974
+    },
+    {
+      "id": "E2",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Text (inline) — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "PASS",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Text übernommen · Speichern fehlgeschlagen\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 2001
+    },
+    {
+      "id": "E3",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Bild drehen — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "PASS",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Bild übernommen · Speichern fehlgeschlagen\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 2004
+    },
+    {
+      "id": "E4",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Datei ersetzen — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "PASS",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Datei übernommen · Speichern fehlgeschlagen\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 1967
+    },
+    {
+      "id": "E5",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Sticky Note — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "PASS",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Sticky Note übernommen · Speichern fehlgeschlagen\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 2010
+    },
+    {
+      "id": "E5b",
+      "covers": "R01.1 · Quota-Sperre",
+      "title": "Bearbeitung während Quota-Sperre: Standardsortierung — kein \"gespeichert\", Stand unverändert, RAM behält Änderung",
+      "status": "PASS",
+      "expected": "Toast \"… übernommen · Speichern fehlgeschlagen\", kein \"gespeichert\"; gespeicherter Stand byte-identisch; Hinweis und Status bleiben; Änderung im RAM-Backup",
+      "observed": "Sperre vorher=true; Toast=\"Standardsortierung übernommen · Speichern fehlgeschlagen\"; gespeichert byte-identisch=true; Hinweis danach=true; Status=\"Speichern fehlgeschlagen\"; Änderung im RAM-Backup=true",
+      "ms": 1962
+    },
+    {
+      "id": "E6",
+      "covers": "R01.1 · Fremd-Tab-Sperre",
+      "title": "Zwei Tabs sequenziell: Bearbeitung im gesperrten Tab B meldet \"Speichern gesperrt\" und überschreibt nichts",
+      "status": "PASS",
+      "expected": "Toast \"Text übernommen · Speichern gesperrt\"; Stand von Tab A byte-identisch",
+      "observed": "B gesperrt=true; Toast=\"Text übernommen · Speichern gesperrt\"; Stand von A byte-identisch=true",
+      "ms": 2453
+    },
+    {
+      "id": "E7",
+      "covers": "R01.1 · verworfener Write",
+      "title": "setItem verwirft den State-Write still (kein Fehler): Read-back erkennt es, Bearbeitung meldet kein \"gespeichert\"",
+      "status": "PASS",
+      "expected": "Kein \"gespeichert\"-Toast; Status \"Speichern fehlgeschlagen\"; dauerhafter Hinweis",
+      "observed": "Toast=\"Text übernommen · Speichern fehlgeschlagen\"; gespeichert unverändert=true; Status=\"Speichern fehlgeschlagen\"; Hinweis=true",
+      "ms": 1606
+    },
+    {
+      "id": "E8",
+      "covers": "R01.1 · Positivkontrolle",
+      "title": "Normale Bearbeitung: \"gespeichert\" erscheint erst, wenn der Write schon verifiziert im Speicher steht",
+      "status": "PASS",
+      "expected": "Toast \"… gespeichert\" und im selben Moment ist die Änderung bereits in localStorage",
+      "observed": "dialogText: \"Text gespeichert\", bereits gespeichert=true; inlineText: \"Text gespeichert\", bereits gespeichert=true; image: \"Bild gespeichert\", bereits gespeichert=true; stickyNote: \"Sticky Note gespeichert\", bereits gespeichert=true",
+      "ms": 3229
+    },
+    {
+      "id": "E9",
+      "covers": "R01.1 · Temporärmodus",
+      "title": "AutoSave aus, Text bearbeiten: Toast nennt \"nicht gespeichert\", localStorage unverändert",
+      "status": "PASS",
+      "expected": "Toast \"Text übernommen · Temporärer Modus, nicht gespeichert\"; Stand unverändert",
+      "observed": "Toast=\"Text übernommen · Temporärer Modus, nicht gespeichert\"; gespeichert unverändert=true",
+      "ms": 1459
+    },
+    {
+      "id": "E10",
+      "covers": "R01.1 · verwaiste Karte (I-C05)",
+      "title": "Cloud-Stand wird angewendet, während der Bearbeiten-Dialog offen ist: kein \"gespeichert\" für die verlorene Änderung",
+      "status": "PASS",
+      "expected": "Geht die Änderung verloren (I-C05, weiterhin offen), meldet der Toast \"nicht übernommen\" statt \"gespeichert\"",
+      "observed": "Remote angewendet bei offenem Dialog=true; Änderung gespeichert=false; Toast=\"Text nicht übernommen · Karte wurde inzwischen ersetzt\"",
+      "note": "Prüft nur die Ehrlichkeit der Meldung. Der Verlust der Änderung selbst (I-C05) bleibt offen.",
+      "ms": 6999
+    },
+    {
+      "id": "A10",
+      "covers": "Syntax",
+      "title": "node --check für alle Module",
+      "status": "PASS",
+      "expected": "alle bestanden",
+      "observed": "src/js/app.js: ok; src/js/config/constants.js: ok; src/js/ui/toast.js: ok; src/js/utils/files.js: ok; src/js/utils/format.js: ok",
+      "ms": 144
+    }
+  ],
+  "externalHostsRequested": [
+    "fonts.googleapis.com",
+    "cdnjs.cloudflare.com",
+    "cdn.jsdelivr.net"
+  ],
+  "supabaseContacted": false,
+  "note": "All external hosts intercepted (aborted or served locally); Supabase replaced by an in-memory mock; synthetic data only."
+}

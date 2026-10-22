@@ -322,6 +322,19 @@ import { showToast } from './ui/toast.js';
     }
     try{ return new Blob([data]).size; }catch(e){ return data.length; }
   }
+  // R02: colors, MIME types and payload references arrive from imports, cloud snapshots and old backups.
+  // Only values the app itself produces survive; everything else is dropped before it reaches a sink.
+  const SAFE_HEX_COLOR = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+  const SAFE_MIME = /^[a-z0-9][\w!#$&^.+-]*\/[a-z0-9][\w!#$&^.+-]*(?:\s*;\s*[\w!#$&^.+-]+=(?:[\w!#$&^.+-]+|"[^"\\\r\n]*"))*$/i;
+  function normalizedSpaceColor(value){
+    if(typeof value !== 'string') return null;
+    const color = value.trim();
+    return SAFE_HEX_COLOR.test(color) ? color : null;
+  }
+  function normalizedMime(value, fallback){
+    return typeof value === 'string' && SAFE_MIME.test(value) ? value : fallback;
+  }
+  function isDataUrl(value){ return typeof value === 'string' && /^data:/i.test(value); }
   function normalizeItem(rawItem, itemId){
     const item = isPlainObject(rawItem) ? {...rawItem} : {};
     item.id = itemId;
@@ -335,8 +348,10 @@ import { showToast } from './ui/toast.js';
       const rawIds = Array.isArray(item.itemIds) ? item.itemIds : [];
       item.itemIds = [...new Set(rawIds.filter(id=>typeof id === 'string' && id && id !== itemId))];
     } else {
+      // Non-text payloads are only ever stored as data: URLs; javascript:, http: and other schemes are dropped.
+      if(item.type !== 'text' && item.data != null && !isDataUrl(item.data)) item.data = null;
       item.size = normalizedSize(item.size, item.data);
-      if(typeof item.mime !== 'string' || !item.mime) item.mime = item.type === 'text' ? 'text/plain' : 'application/octet-stream';
+      item.mime = normalizedMime(item.mime, item.type === 'text' ? 'text/plain' : 'application/octet-stream');
     }
     ['favorite','pinned','locked'].forEach(key=>{
       if(item[key] !== true) delete item[key];
@@ -421,7 +436,8 @@ import { showToast } from './ui/toast.js';
         name:normalizedString(rawSpace.name, 'Unbenannter Space'),
         sortMode:SORT_MODES[rawSpace.sortMode] ? rawSpace.sortMode : 'manual'
       };
-      if(typeof space.color !== 'string' || !space.color.trim()) delete space.color;
+      const color = normalizedSpaceColor(rawSpace.color);
+      if(color) space.color = color; else delete space.color;
       spaces.push(space);
     }
     if(!spaces.length){
@@ -662,6 +678,17 @@ import { showToast } from './ui/toast.js';
     a.href = url; a.download = filename; a.click();
     setTimeout(()=>URL.revokeObjectURL(url), 4000);
   }
+  // Decodes a stored data: URL locally (no fetch, no navigation). Any other reference yields null.
+  function dataUrlToBlob(dataUrl, fallbackMime){
+    if(!isDataUrl(dataUrl)) return null;
+    const comma = dataUrl.indexOf(',');
+    const header = comma < 0 ? dataUrl.slice(5) : dataUrl.slice(5, comma);
+    const payload = comma < 0 ? '' : dataUrl.slice(comma + 1);
+    const base64 = /;base64$/i.test(header);
+    const type = normalizedMime(base64 ? header.slice(0, -7) : header, fallbackMime || 'application/octet-stream');
+    try{ return new Blob([base64 ? base64ToBuf(payload) : decodeURIComponent(payload)], {type}); }
+    catch(e){ return null; }
+  }
   async function migrateFromLegacyWindowStorage(){
     // best-effort one-time import from an earlier version of this tool that used window.storage
     try{
@@ -827,7 +854,7 @@ import { showToast } from './ui/toast.js';
   function buildSpaceContextMenu(sp, tabEl){
     const rows = [];
     rows.push({icon:ICONS.rename, label:'Umbenennen', onClick:()=>enterTabRenameMode(tabEl, sp)});
-    rows.push({icon:`<span style="width:14px;height:14px;border-radius:50%;background:${sp.color||'#c7cbd3'};display:inline-block;"></span>`, label:'Farbe wählen', onClick:()=>openColorPicker(tabEl.querySelector('.tab-dot') || tabEl, sp)});
+    rows.push({swatch:sp.color||'#c7cbd3', label:'Farbe wählen', onClick:()=>openColorPicker(tabEl.querySelector('.tab-dot') || tabEl, sp)});
     rows.push({sep:true});
     rows.push({icon:ICONS.duplicate, label:'Space duplizieren', onClick:()=>duplicateSpace(sp)});
     rows.push({icon:ICONS.download, label:'Als JSON exportieren', onClick:()=>exportSpaceAsJson(sp)});
@@ -2058,6 +2085,13 @@ import { showToast } from './ui/toast.js';
   let lastCtxPos = {x:0,y:0};
   let submenuCloseTimer = null;
 
+  function colorSwatch(color){
+    const dot=document.createElement('span');
+    dot.style.cssText='width:14px;height:14px;border-radius:50%;display:inline-block;';
+    if(color) dot.style.background=normalizedSpaceColor(color) || '#c7cbd3';
+    else dot.style.border='2px solid #c7cbd3';
+    return dot;
+  }
   function renderContextRows(container, rows, isSubmenu){
     container.innerHTML = '';
     rows.forEach(r=>{
@@ -2065,7 +2099,10 @@ import { showToast } from './ui/toast.js';
       if(r.header){ const label=document.createElement('div'); label.className='ctx-label'; label.textContent=r.label; container.appendChild(label); return; }
       const row=document.createElement('div');
       row.className='ctx-row'+(r.danger?' danger':'')+(r.disabled?' disabled':'')+(r.submenu?' has-submenu':'');
-      row.innerHTML=`${r.icon||''}<span>${r.label}</span>`;
+      // r.icon is static app markup; labels (space names, …) and swatch colors are untrusted and never parsed as HTML.
+      if(r.swatch !== undefined) row.appendChild(colorSwatch(r.swatch));
+      else if(r.icon) row.insertAdjacentHTML('beforeend', r.icon);
+      const label=document.createElement('span'); label.textContent=r.label; row.appendChild(label);
       if(r.submenu){
         const open=()=>openContextSubmenu(row,r.submenu);
         row.addEventListener('mouseenter',open);
@@ -2796,10 +2833,13 @@ import { showToast } from './ui/toast.js';
     let count = 0;
     for(const id of folder.itemIds){
       const it = data.items[id];
-      if(!it || it.type==='folder') continue;
+      // Locked cards stay out of the ZIP: their plaintext is not available without the PIN (I-25).
+      if(!it || it.type==='folder' || it.locked) continue;
+      const blob = it.type === 'text' ? null : dataUrlToBlob(it.data, it.mime);
+      if(it.type !== 'text' && !blob) continue;
       const filename = exportFilename(it, used);
-      if(it.type === 'text'){ zip.file(filename, it.data); }
-      else { const base64 = (it.data.split(',')[1]) || ''; zip.file(filename, base64, {base64:true}); }
+      if(it.type === 'text'){ zip.file(filename, it.data ?? ''); }
+      else { zip.file(filename, blob); }
       count++;
     }
     if(!count) return null;
@@ -2823,11 +2863,13 @@ import { showToast } from './ui/toast.js';
 
   async function itemToShareFile(item){
     if(item.type === 'text') return null; // handled as text, not a file
-    const blob = await (await fetch(item.data)).blob();
+    const blob = dataUrlToBlob(item.data, item.mime);
+    if(!blob) return null;
     return new File([blob], displayName(item), {type: blob.type || item.mime || 'application/octet-stream'});
   }
   async function nativeShare(item){
     closeShare();
+    if(!contentAccessAllowed(item) || unlockedViews.has(item)) return;
     try{
       if(item.type === 'folder'){
         showToast('ZIP wird für die Freigabe erstellt…');
@@ -2848,6 +2890,7 @@ import { showToast } from './ui/toast.js';
     }
   }
   function openShareSheet(item){
+    if(!contentAccessAllowed(item) || unlockedViews.has(item)) return;
     const isFolder = item.type === 'folder';
     shareOptions.innerHTML = '';
     const rows = [];
@@ -2864,7 +2907,9 @@ import { showToast } from './ui/toast.js';
     rows.forEach(r=>{
       const row = document.createElement('div');
       row.className = 'share-row';
-      row.innerHTML = `<span class="share-icon">${r.icon}</span><span>${r.label}</span>`;
+      const icon = document.createElement('span'); icon.className = 'share-icon'; icon.innerHTML = r.icon;
+      const label = document.createElement('span'); label.textContent = r.label;
+      row.append(icon, label);
       row.addEventListener('click', r.onClick);
       shareOptions.appendChild(row);
     });
@@ -3066,7 +3111,7 @@ import { showToast } from './ui/toast.js';
     } else {
       const meta = extMeta(item.name);
       const w = document.createElement('div'); w.className='file-icon-wrap'; w.style.color=meta.fg;
-      w.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="file-badge" style="background:${meta.bg};color:${meta.fg}">${meta.label}</span>`;
+      w.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="file-badge" style="background:${meta.bg};color:${meta.fg}">${escapeHtml(meta.label)}</span>`;
       thumb.appendChild(w);
     }
     card.appendChild(thumb);
@@ -3164,6 +3209,7 @@ import { showToast } from './ui/toast.js';
       const filename=exportFilename(item,used);
       const mime=item.type==='text'?'text/plain':(item.mime||'application/octet-stream');
       const url=item.type==='text'?('data:text/plain,'+encodeURIComponent(item.data)):item.data;
+      if(!isDataUrl(url)) return;
       event.dataTransfer.setData('DownloadURL',`${mime}:${filename}:${url}`);
       event.dataTransfer.effectAllowed='copy';
     }catch(error){}
@@ -3232,7 +3278,7 @@ import { showToast } from './ui/toast.js';
     document.removeEventListener('pointerdown',session.outsideHandler,true);
     const nextValue=session.textarea.value;
     session.card.classList.remove('inline-editing');
-    if(saveChanges && nextValue!==session.original){
+    if(saveChanges && nextValue!==session.original && !isLockedItem(session.item)){
       mutationCheckpoint('content', currentSpaceId);
       session.item.data=nextValue;
       session.item.size=new Blob([nextValue]).size;
@@ -3677,6 +3723,7 @@ import { showToast } from './ui/toast.js';
   }
 
   function imageDataUrlToPngBlob(dataUrl){
+    if(!isDataUrl(dataUrl)) return Promise.reject(new Error('not a data URL'));
     return new Promise((resolve, reject)=>{
       const img = new Image();
       img.onload = ()=>{
@@ -3690,6 +3737,7 @@ import { showToast } from './ui/toast.js';
     });
   }
   async function copyItem(item){
+    if(!contentAccessAllowed(item)) return;
     try{
       if(item.type === 'text'){ await navigator.clipboard.writeText(item.data); markRecent(item,'copy'); showToast('Text kopiert'); }
       else if(item.type === 'image'){
@@ -3699,20 +3747,24 @@ import { showToast } from './ui/toast.js';
         markRecent(item,'copy'); showToast('Bild kopiert');
       }
       else {
-        try{ const blob = await (await fetch(item.data)).blob(); await navigator.clipboard.write([new ClipboardItem({[blob.type||'application/octet-stream']: blob})]); markRecent(item,'copy'); showToast('Kopiert'); }
+        try{ const blob = dataUrlToBlob(item.data, item.mime); if(!blob) throw new Error('no data'); await navigator.clipboard.write([new ClipboardItem({[blob.type||'application/octet-stream']: blob})]); markRecent(item,'copy'); showToast('Kopiert'); }
         catch(err){ showToast('Zwischenablage unterstützt diesen Typ nicht — nutze Herunterladen in der Vorschau'); }
       }
     }catch(e){ showToast('Kopieren fehlgeschlagen — nutze Herunterladen in der Vorschau'); }
   }
   function downloadItem(item){
-    if(item.type==='folder') return;
-    const a = document.createElement('a');
-    if(item.type==='text'){ const blob = new Blob([item.data], {type:'text/plain'}); a.href = URL.createObjectURL(blob); a.download = (displayName(item)||'text')+'.txt'; }
-    else { a.href = item.data; a.download = displayName(item); }
-    a.click();
+    if(item.type==='folder' || !contentAccessAllowed(item)) return;
+    if(item.type==='text'){ downloadBlob(new Blob([item.data ?? ''], {type:'text/plain'}), (displayName(item)||'text')+'.txt'); return; }
+    // Files always download from a local Blob; the stored reference is never used as a link target.
+    const blob = dataUrlToBlob(item.data, item.mime);
+    if(!blob){ showToast('Download nicht möglich · Dateiinhalt fehlt oder ist ungültig'); return; }
+    downloadBlob(blob, displayName(item));
   }
 
   function openPreview(item){
+    // Card button, quick look, search, inspector, storage, recent and duplicate lists all open previews here.
+    if(isLockedItem(item)){ previewLockedItem(item); return; }
+    const readOnly = unlockedViews.has(item);
     markRecent(item,'open');
     previewName.textContent = displayName(item);
     previewBody.innerHTML = '';
@@ -3726,7 +3778,7 @@ import { showToast } from './ui/toast.js';
     } else {
       const meta = extMeta(item.name);
       const div = document.createElement('div'); div.className='preview-file';
-      div.innerHTML = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="${meta.fg}" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="file-badge" style="background:${meta.bg};color:${meta.fg}">${meta.label}</span><span>${fmtSize(item.size)}</span>`;
+      div.innerHTML = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="${meta.fg}" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="file-badge" style="background:${meta.bg};color:${meta.fg}">${escapeHtml(meta.label)}</span><span>${fmtSize(item.size)}</span>`;
       previewBody.appendChild(div);
     }
     previewFooter.innerHTML = '';
@@ -3743,7 +3795,13 @@ import { showToast } from './ui/toast.js';
     });
     const dlBtn = document.createElement('button'); dlBtn.style.background='#f4f5f7'; dlBtn.style.color='var(--ink)';
     dlBtn.innerHTML = ICONS.download+' Herunterladen'; dlBtn.addEventListener('click', ()=>downloadItem(item));
-    previewFooter.appendChild(shareBtn); previewFooter.appendChild(copyBtn); previewFooter.appendChild(editBtn); previewFooter.appendChild(dlBtn);
+    if(readOnly){
+      // PIN-unlocked view: plaintext copy outside the board, so no editing and no sharing into other spaces.
+      editBtn.disabled = true; editBtn.title = 'Bearbeiten erst nach „PIN entfernen“ möglich';
+      previewFooter.appendChild(copyBtn); previewFooter.appendChild(editBtn); previewFooter.appendChild(dlBtn);
+    } else {
+      previewFooter.appendChild(shareBtn); previewFooter.appendChild(copyBtn); previewFooter.appendChild(editBtn); previewFooter.appendChild(dlBtn);
+    }
     previewOverlay.classList.add('show');
   }
   function closePreview(){
@@ -3825,8 +3883,12 @@ import { showToast } from './ui/toast.js';
   document.addEventListener('dragover', (e)=>{ e.preventDefault(); });
   document.addEventListener('dragleave', (e)=>{ e.preventDefault(); dragCounter=Math.max(0,dragCounter-1); if(dragCounter===0){ dropzone.classList.remove('drag'); dragFog.classList.remove('active'); } });
   document.addEventListener('drop', async (e)=>{
-    e.preventDefault(); dragCounter=0; dropzone.classList.remove('drag'); dragFog.classList.remove('active');
-    const dt = e.dataTransfer; if(!dt) return;
+    dragCounter=0; dropzone.classList.remove('drag'); dragFog.classList.remove('active');
+    const dt = e.dataTransfer;
+    // Text dropped into a field stays in that field; files are always captured (the default would navigate away).
+    if(!(dt && dt.files && dt.files.length) && e.composedPath().some(isEditableElement)) return;
+    e.preventDefault();
+    if(!dt) return;
     if(dt.files && dt.files.length){ await ingestFiles(dt.files); return; }
     const text = dt.getData('text/uri-list') || dt.getData('text/plain');
     if(text) ingestText(text);
@@ -3834,9 +3896,29 @@ import { showToast } from './ui/toast.js';
   dropzone.addEventListener('click', ()=> fileInput.click());
   fileInput.addEventListener('change', async (e)=>{ await ingestFiles(e.target.files); fileInput.value=''; });
 
+  // A paste becomes a card only when it is aimed at the board itself. Pastes into any editable control
+  // (password, PIN, e-mail, search, notes, inline editors, contenteditable, also inside shadow roots) and
+  // pastes while a dialog is open stay with the browser. Deliberate capture: the "Zwischenablage" dialog or "Einfügen".
+  const NON_EDITABLE_INPUT_TYPES = new Set(['button','checkbox','color','file','hidden','image','radio','range','reset','submit']);
+  const BOARD_PASTE_OVERLAYS = new Set(['folderOverlay']);
+  function isEditableElement(el){
+    if(!el || el.nodeType !== 1) return false;
+    if(el.isContentEditable) return true;
+    if(el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
+    if(el.tagName === 'INPUT') return !NON_EDITABLE_INPUT_TYPES.has(String(el.type || 'text').toLowerCase());
+    return el.getAttribute('role') === 'textbox';
+  }
+  function deepActiveElement(){
+    let el = document.activeElement;
+    while(el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
+    return el;
+  }
+  function isBoardPaste(e){
+    if(e.composedPath().some(isEditableElement) || isEditableElement(deepActiveElement())) return false;
+    return !Array.from(document.querySelectorAll('.overlay.show')).some(overlay=>!BOARD_PASTE_OVERLAYS.has(overlay.id));
+  }
   document.addEventListener('paste', async (e)=>{
-    if(document.activeElement === textArea || document.activeElement === folderTitleInput || document.activeElement === titleInput || document.activeElement === renameInput) return;
-    if(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('tab-rename-input')) return;
+    if(!isBoardPaste(e)) return;
     const cd = e.clipboardData; if(!cd) return;
     let handledFile = false;
     for(const it of Array.from(cd.items)){ if(it.kind==='file'){ const file=it.getAsFile(); if(file){ await ingestFiles([file]); handledFile=true; } } }
@@ -4412,7 +4494,8 @@ import { showToast } from './ui/toast.js';
       const importedData = normalizeSpaceData(cloneJson(payload.data));
       state.data[newId] = importedData;
       const newSpace = { id:newId, name:importedName, sortMode:defaultSortModeSetting() };
-      if(typeof payload.color === 'string' && payload.color) newSpace.color = payload.color;
+      const color = normalizedSpaceColor(payload.color);
+      if(color) newSpace.color = color;
       spaces.push(newSpace);
       state.spaces = spaces;
       persistState();
@@ -4505,12 +4588,12 @@ import { showToast } from './ui/toast.js';
       }
     };
     const rows = SPACE_COLORS.map(c=>({
-      icon:`<span style="width:14px;height:14px;border-radius:50%;background:${c};display:inline-block;"></span>`,
+      swatch:c,
       label:'Farbe',
       onClick:()=>applyColor(c)
     }));
     rows.push({sep:true});
-    rows.push({icon:'<span style="width:14px;height:14px;border-radius:50%;border:2px solid #c7cbd3;display:inline-block;"></span>', label:'Kein Label', onClick:()=>applyColor(null)});
+    rows.push({swatch:null, label:'Kein Label', onClick:()=>applyColor(null)});
     showContextMenu(rect.left, rect.bottom+6, rows);
   }
 
@@ -4715,6 +4798,7 @@ import { showToast } from './ui/toast.js';
   let editImageState = { rotation:0, flipH:false, flipV:false, img:null };
 
   function openEditContent(item, ctx){
+    if(!contentEditAllowed(item)) return;
     if(item.type === 'text'){
       editTextContext = { item, ctx };
       textOverlayTitle.textContent = 'Inhalt bearbeiten';
@@ -4739,6 +4823,7 @@ import { showToast } from './ui/toast.js';
     textOverlay.classList.remove('show');
     if(editTextContext){
       const { item, ctx } = editTextContext;
+      if(isLockedItem(item)){ editTextContext = null; textOverlayTitle.textContent = 'Zwischenablage einfügen'; showToast('Text nicht übernommen · Karte ist PIN-geschützt'); return; }
       mutationCheckpoint('content', currentSpaceId);
       item.data = val;
       item.size = new Blob([val]).size;
@@ -4780,6 +4865,7 @@ import { showToast } from './ui/toast.js';
   imageEditSaveBtn.addEventListener('click', ()=>{
     if(!editImageContext) return;
     const { item, ctx } = editImageContext;
+    if(isLockedItem(item)){ imageEditOverlay.classList.remove('show'); editImageContext = null; showToast('Bild nicht übernommen · Karte ist PIN-geschützt'); return; }
     mutationCheckpoint('content', currentSpaceId);
     const dataUrl = imageEditCanvas.toDataURL(item.mime && item.mime.includes('png') ? 'image/png' : 'image/jpeg', 0.92);
     item.data = dataUrl;
@@ -4800,6 +4886,7 @@ import { showToast } from './ui/toast.js';
     if(file.size > MAX_FILE_BYTES){ showToast(`"${file.name}" ist zu groß (max. ${fmtSize(MAX_FILE_BYTES)})`); return; }
     const { item, ctx } = editContextForReplace;
     editContextForReplace = null;
+    if(isLockedItem(item)){ showToast('Datei nicht übernommen · Karte ist PIN-geschützt'); return; }
     try{
       const dataUrl = await fileToDataURL(file);
       mutationCheckpoint('content', currentSpaceId);
@@ -4880,6 +4967,7 @@ import { showToast } from './ui/toast.js';
   }
   let currentPaletteColors = [];
   async function openPaletteExtract(item){
+    if(!contentAccessAllowed(item)) return;
     let colors;
     try{ colors = await extractPalette(item, 6); }catch(e){ showToast('Farbpalette konnte nicht erstellt werden'); return; }
     currentPaletteColors = colors;
@@ -4901,6 +4989,7 @@ import { showToast } from './ui/toast.js';
 
   // ================= OCR =================
   async function runOcr(item){
+    if(!contentAccessAllowed(item)) return;
     if(typeof Tesseract === 'undefined'){ showToast('OCR nicht verfügbar (kein Internet?)'); return; }
     showToast('Texterkennung läuft…');
     try{
@@ -4930,8 +5019,33 @@ import { showToast } from './ui/toast.js';
   pinInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') resolvePin(pinInput.value); });
   pinOverlay.addEventListener('click', (e)=>{ if(e.target===pinOverlay) resolvePin(null); });
 
+  // ================= ACCESS POLICY FOR LOCKED CARDS =================
+  // One rule for every content entry point (preview, quick look, search, inspector, menus, editors):
+  // a locked card exposes no content without its PIN, and the plaintext copy shown after PIN entry is read-only.
+  const unlockedViews = new WeakSet();
+  function isLockedItem(item){ return !!item && item.locked === true; }
+  // Identity, not id: imported spaces may repeat item ids across spaces.
+  function isBoardItem(item){ return !!item && Object.values(state.data || {}).some(d=>d?.items?.[item.id] === item); }
+  function contentAccessAllowed(item){
+    if(!item) return false;
+    if(isLockedItem(item)){ showToast('Karte ist PIN-geschützt'); return false; }
+    return true;
+  }
+  function contentEditAllowed(item){
+    if(!contentAccessAllowed(item)) return false;
+    if(unlockedViews.has(item)){ showToast('Bearbeiten erst nach „PIN entfernen“ möglich'); return false; }
+    if(!isBoardItem(item)){ showToast('Bearbeiten nicht möglich · Karte ist nicht mehr im Board'); return false; }
+    return true;
+  }
+
   // ================= PIN-PROTECTED CARDS (Web Crypto AES-GCM) =================
-  function bufToBase64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+  // Chunked: spreading a large buffer into String.fromCharCode overflows the call stack (N2). Output is unchanged.
+  function bufToBase64(buf){
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for(let i=0;i<bytes.length;i+=0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i+0x8000));
+    return btoa(bin);
+  }
   function base64ToBuf(b64){ const bin=atob(b64); const arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i); return arr.buffer; }
   async function deriveKey(pin, saltBytes){
     const enc = new TextEncoder();
@@ -4941,63 +5055,92 @@ import { showToast } from './ui/toast.js';
       keyMaterial, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
     );
   }
-  async function encryptItemWithPin(item, pin){
+  // Format unchanged: AES-GCM-256, PBKDF2-SHA-256 × 150 000, base64 {cipher, iv, salt}, PIN bytes as typed.
+  // Returns the encrypted payload without touching the card, so a failure cannot leave it half-locked.
+  async function encryptPayloadWithPin(plain, pin){
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const key = await deriveKey(pin, salt);
-    const plainBuf = new TextEncoder().encode(item.data);
+    const plainBuf = new TextEncoder().encode(plain);
     const cipherBuf = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, plainBuf);
-    item.encData = { cipher:bufToBase64(cipherBuf), iv:bufToBase64(iv), salt:bufToBase64(salt) };
-    item.lockedType = item.type;
-    item.data = null;
-    item.locked = true;
+    return { cipher:bufToBase64(cipherBuf), iv:bufToBase64(iv), salt:bufToBase64(salt) };
   }
+  // Rejects with 'PIN_WRONG' (authentication failed) or 'PIN_DATA_INVALID' (missing or corrupt payload).
   async function decryptItemWithPin(item, pin){
-    const salt = new Uint8Array(base64ToBuf(item.encData.salt));
-    const iv = new Uint8Array(base64ToBuf(item.encData.iv));
+    let salt, iv, cipherBuf;
+    try{
+      salt = new Uint8Array(base64ToBuf(item.encData.salt));
+      iv = new Uint8Array(base64ToBuf(item.encData.iv));
+      cipherBuf = base64ToBuf(item.encData.cipher);
+    }catch(e){ throw new Error('PIN_DATA_INVALID'); }
     const key = await deriveKey(pin, salt);
-    const cipherBuf = base64ToBuf(item.encData.cipher);
-    const plainBuf = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, cipherBuf);
+    let plainBuf;
+    try{ plainBuf = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, cipherBuf); }
+    catch(e){ throw new Error(e && e.name === 'OperationError' ? 'PIN_WRONG' : 'PIN_DATA_INVALID'); }
     return new TextDecoder().decode(plainBuf);
   }
+  function showPinError(e){
+    if(e && e.message === 'PIN_WRONG') showToast('Falscher PIN');
+    else { console.warn('CopyBoard: Entschlüsselung fehlgeschlagen.', e); showToast('Entschlüsselung fehlgeschlagen · PIN-Daten sind beschädigt oder unvollständig'); }
+  }
+  function pinCryptoAvailable(){
+    if(typeof crypto !== 'undefined' && crypto.subtle) return true;
+    showToast('PIN-Schutz hier nicht verfügbar');
+    return false;
+  }
   async function lockItemWithPin(item, ctx){
-    if(typeof crypto === 'undefined' || !crypto.subtle){ showToast('PIN-Schutz hier nicht verfügbar'); return; }
+    if(!pinCryptoAvailable()) return;
+    if(!contentEditAllowed(item)) return;
     const pin = await askPin('PIN festlegen');
     if(!pin){ return; }
     const confirmPin = await askPin('PIN bestätigen');
     if(confirmPin !== pin){ showToast('PINs stimmen nicht überein'); return; }
+    const plain = item.data;
+    let encData;
+    try{ encData = await encryptPayloadWithPin(plain, pin); }
+    catch(e){ console.warn('CopyBoard: Verschlüsselung fehlgeschlagen.', e); showToast('Sperren fehlgeschlagen · Karte bleibt unverändert'); return; }
+    // The card may have changed or left the board while PBKDF2 was running.
+    if(isLockedItem(item) || item.data !== plain || !isBoardItem(item)){ showToast('Sperren abgebrochen · Karte wurde inzwischen geändert'); return; }
+    const lockedItem = { ...item, encData, lockedType:item.type, data:null, locked:true };
+    if(stateChars(state) - stateChars(item) + stateChars(lockedItem) > MAX_LOCAL_STATE_CHARS){
+      showToast('Sperren nicht möglich · verschlüsselte Karte passt nicht in den lokalen Speicher'); return;
+    }
     mutationCheckpoint('content', currentSpaceId);
-    await encryptItemWithPin(item, pin);
-    persistState();
+    Object.assign(item, { encData, lockedType:item.type, data:null, locked:true });
     if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
-    showToast('Karte gesperrt');
+    showEditSaveToast('PIN-Sperre', item);
   }
   async function previewLockedItem(item){
+    if(!pinCryptoAvailable()) return;
     const pin = await askPin('PIN eingeben');
     if(!pin) return;
-    try{
-      const plain = await decryptItemWithPin(item, pin);
-      const virtual = { ...item, type:item.lockedType, data:plain, locked:false };
-      openPreview(virtual);
-    }catch(e){ showToast('Falscher PIN'); }
+    let plain;
+    try{ plain = await decryptItemWithPin(item, pin); }
+    catch(e){ showPinError(e); return; }
+    const view = { ...item, type:item.lockedType || item.type, data:plain };
+    delete view.locked; delete view.encData; delete view.lockedType;
+    unlockedViews.add(view);
+    openPreview(view);
   }
   async function unlockItemPermanently(item, ctx){
+    if(!isLockedItem(item) || !pinCryptoAvailable()) return;
     const pin = await askPin('PIN zum Entsperren eingeben');
     if(!pin) return;
-    try{
-      const plain = await decryptItemWithPin(item, pin);
-      mutationCheckpoint('content', currentSpaceId);
-      item.type = item.lockedType;
-      item.data = plain;
-      delete item.locked; delete item.encData; delete item.lockedType;
-      persistState();
-      if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
-      showToast('Entsperrt');
-    }catch(e){ showToast('Falscher PIN'); }
+    let plain;
+    try{ plain = await decryptItemWithPin(item, pin); }
+    catch(e){ showPinError(e); return; }
+    if(!isLockedItem(item) || !isBoardItem(item)){ showToast('Entsperren abgebrochen · Karte wurde inzwischen geändert'); return; }
+    mutationCheckpoint('content', currentSpaceId);
+    item.type = item.lockedType || item.type;
+    item.data = plain;
+    delete item.locked; delete item.encData; delete item.lockedType;
+    if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
+    showEditSaveToast('Entsperrung', item);
   }
 
   // ================= BURN-AFTER-READING LINK =================
   function createBurnLink(item){
+    if(!contentAccessAllowed(item)) return;
     try{
       const encoded = btoa(unescape(encodeURIComponent(item.data)));
       const url = location.href.split('#')[0] + '#burn=' + encoded;

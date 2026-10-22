@@ -1,0 +1,277 @@
+{
+  "generatedAt": "2026-10-22T02:06:12.643Z",
+  "base": "http://127.0.0.1:8768/",
+  "label": "baseline-35bde4c",
+  "browser": "Chromium (Playwright, headless)",
+  "results": [
+    {
+      "id": "X1",
+      "covers": "S1 · I-31",
+      "title": "Space-Name mit HTML-Payload: Umbenennen, Space-Picker, Dropdown, Palette, Bestätigung",
+      "status": "FAIL",
+      "expected": "Space-Name überall als Text; kein Handler ausgeführt",
+      "observed": "Handler ausgeführt=1; Picker zeigt Namen als Text=false; Bestätigungstext enthält Namen als Text=true",
+      "ms": 3400
+    },
+    {
+      "id": "X1b",
+      "covers": "S1 · I-31 (Import)",
+      "title": "Board-Import mit Space-Namen als Payload: Tabs, Space-Picker, Menüs",
+      "status": "FAIL",
+      "expected": "Importierte Namen bleiben erhalten und werden nur als Text dargestellt",
+      "observed": "Handler ausgeführt=1; Picker-Zeilen=[\"\",\"\"]",
+      "ms": 2805
+    },
+    {
+      "id": "X2",
+      "covers": "S1 · I-32",
+      "title": "Space-Import mit Farb-Payload: Kontextmenü, Tab, Dropdown; Farbe verworfen",
+      "status": "FAIL",
+      "expected": "Ungültige Farbe wird beim Import verworfen; kein Handler ausgeführt",
+      "observed": "Handler ausgeführt=1; gespeicherte Farbe=\"red\\\" onmouseover=\\\"x\\\"><img src=x onerror=\\\"window.__xss=(window.__xss||0)+1\\\">\"",
+      "ms": 2002
+    },
+    {
+      "id": "X2b",
+      "covers": "S1 · I-32 (Board/Cloud-Grenze)",
+      "title": "Board-Import mit ungültigen Farben in state.spaces; legitime Hex-Farben bleiben",
+      "status": "FAIL",
+      "expected": "#4f6bff und #abc bleiben, url()/CSS-Anhänge werden verworfen, kein externer Request",
+      "observed": "Farben={\"sp_recherche\":\"#4f6bff\",\"sp_privat\":\"url(javascript:alert(1))\",\"sp_archiv\":\"#22b07d;background-image:url(https://example.invalid/t.png)\",\"sp_short\":\" #abc \"}; Handler=0; example.invalid angefragt=true",
+      "ms": 2177
+    },
+    {
+      "id": "X2c",
+      "covers": "S1 · Positivkontrolle Farbe",
+      "title": "Farbe über den Picker wählen: Hex gespeichert, Swatch im Menü sichtbar",
+      "status": "PASS",
+      "expected": "#ff6b57 gespeichert, Swatch rgb(255, 107, 87)",
+      "observed": "gespeichert=#ff6b57; Swatch=rgb(255, 107, 87)",
+      "ms": 1285
+    },
+    {
+      "id": "X3",
+      "covers": "S1 · I-33b",
+      "title": "Import mit javascript:/vbscript:/http:/blob:-Daten: Herunterladen, Vorschau, Kopieren",
+      "status": "FAIL",
+      "expected": "",
+      "observed": "Harness-/Testfehler: page.click: Timeout 8000ms exceeded.",
+      "ms": 18117
+    },
+    {
+      "id": "X3b",
+      "covers": "S1 · I-33b (Bestand)",
+      "title": "Bereits gespeicherter javascript:-Eintrag aus einem Alt-Import: Herunterladen nach dem Laden",
+      "status": "FAIL",
+      "expected": "Auch Bestandsdaten werden beim Laden normalisiert; kein Skript",
+      "observed": "Handler=1; Download=keiner; Toast=\"\"",
+      "ms": 2799
+    },
+    {
+      "id": "X4",
+      "covers": "S1 · sichere Downloads",
+      "title": "Legitime Datei, CSV, Bild und Text herunterladen: Bytes identisch, keine Navigation",
+      "status": "PASS",
+      "expected": "Jeder Download liefert die Originalbytes über einen lokalen Blob; Seite bleibt",
+      "observed": "f_pdf: \"angebot-entwurf.pdf\" identisch=true; f_csv: \"messwerte.csv\" identisch=true; i_grad: \"skizze-verlauf.png\" identisch=true; t_notes: \"Meeting-Notizen Q4_ Roadmap abstimmen, B….txt\" identisch=true; Kontextmenü f_pdf identisch=true; URL unverändert=true",
+      "ms": 1808
+    },
+    {
+      "id": "X5",
+      "covers": "S1 · MIME-Grenze",
+      "title": "Import mit MIME-Payloads: ungültige ersetzt, legitime unverändert",
+      "status": "FAIL",
+      "expected": "Gültige MIME-Typen (inkl. Parameter) bleiben; ungültige → application/octet-stream",
+      "observed": "{\"m_ok1\":\"application/vnd.openxmlformats-officedocument.wordprocessingml.document\",\"m_ok2\":\"audio/webm;codecs=opus\",\"m_ok3\":\"image/svg+xml\",\"m_ok4\":\"text/plain; charset=\\\"utf-8\\\"\",\"m_bad1\":\"text/html\\\"><img src=x onerror=\\\"window.__xss=1\\\">\",\"m_bad2\":\"image/png\\n<script>\",\"m_bad3\":\"javascript:alert(1)\"}",
+      "ms": 1551
+    },
+    {
+      "id": "X6",
+      "covers": "S1 · Kompatibilität",
+      "title": "Bestandsboard, Backup v1, Legacy-Rohformat und Space-Export bleiben verlustfrei",
+      "status": "PASS",
+      "expected": "Alle Karten (inkl. PIN-Karte, Bilder, Dateien) und Farben byte-identisch",
+      "observed": "Bestand: true; Backup v1: true; Legacy-Rohformat: true; Space-Export → Import: true",
+      "ms": 6873
+    },
+    {
+      "id": "P1",
+      "covers": "S2 · I-02, N1",
+      "title": "Paste in jedes sensible bzw. editierbare Feld erzeugt keine Karte",
+      "status": "FAIL",
+      "expected": "Kein Feld erzeugt eine Karte",
+      "observed": "Palette-Suche: KARTE ERZEUGT; Sticky Note: KARTE ERZEUGT; Cloud-E-Mail: KARTE ERZEUGT; Cloud-Passwort: KARTE ERZEUGT; Cloud-Passwort bestätigen: KARTE ERZEUGT; PIN: KARTE ERZEUGT; Inline-Texteditor: KARTE ERZEUGT; Text-Dialog (bewusste Erfassung): keine Karte; Karte umbenennen: keine Karte; Board-Titel: keine Karte; Ordnertitel: keine Karte; Tab umbenennen: keine Karte; contenteditable: KARTE ERZEUGT; contenteditable (Kindelement): KARTE ERZEUGT; Shadow-DOM-Passwortfeld: KARTE ERZEUGT; role=textbox: KARTE ERZEUGT; Dialog offen, Fokus auf Schaltfläche: KARTE ERZEUGT",
+      "ms": 21556
+    },
+    {
+      "id": "P1k",
+      "covers": "S2 · N1 (echte Tastatur)",
+      "title": "Echtes Strg/Cmd+V in Cloud-E-Mail und Cloud-Passwort: Paste-Ereignis erreicht das Feld, keine Karte",
+      "status": "FAIL",
+      "expected": "Paste-Ereignis am Feld, keine neue Karte",
+      "observed": "#cloudEmailInput: Ereignisse=[\"cloudEmailInput\"], Feldwert=\"R02-Passwort-Dummy\", neue Karten=1; #cloudPasswordInput: Ereignisse=[\"cloudPasswordInput\"], Feldwert=\"R02-Passwort-Dummy\", neue Karten=1",
+      "ms": 3087
+    },
+    {
+      "id": "P2",
+      "covers": "S2 · Positivkontrollen",
+      "title": "Paste aufs Board, bei offenem Ordner, Text-Dialog, Kontextmenü „Einfügen“, Bild-Paste",
+      "status": "PASS",
+      "expected": "Ausdrückliches Paste aufs Board und bewusste Erfassung erzeugen weiterhin genau eine Karte",
+      "observed": "Board (synthetisch): true; Board (echte Tastatur): true; offener Ordner, Fokus nicht im Feld: true; Text-Dialog „Ablegen“: true; Kontextmenü „Einfügen“: true; Bild-Paste: true",
+      "ms": 15671
+    },
+    {
+      "id": "P3",
+      "covers": "S2 · Drop",
+      "title": "Text in das Cloud-Passwortfeld ziehen: keine Karte; Text aufs Board ziehen: Karte",
+      "status": "FAIL",
+      "expected": "Feld: keine Karte; Board: eine Karte",
+      "observed": "Karten vorher 14, nach Drop ins Feld 15, nach Drop aufs Board 16",
+      "ms": 1997
+    },
+    {
+      "id": "B1",
+      "covers": "S3 · I-13",
+      "title": "Schnellvorschau (Hover + Leertaste) auf gesperrter Karte",
+      "status": "FAIL",
+      "expected": "Normale Karte: Vorschau; gesperrte Karte: PIN-Abfrage, keine Vorschau",
+      "observed": "normal=true; gesperrt: PIN-Abfrage=false, Vorschau=true",
+      "ms": 1622
+    },
+    {
+      "id": "B2",
+      "covers": "S3 · I-39",
+      "title": "Suche → Enter auf gesperrter Karte",
+      "status": "FAIL",
+      "expected": "PIN-Abfrage statt Vorschau",
+      "observed": "PIN-Abfrage=false, Vorschau=true",
+      "ms": 1384
+    },
+    {
+      "id": "B3",
+      "covers": "S3 · Inspector",
+      "title": "Details → „Vorschau öffnen“ auf gesperrter Karte",
+      "status": "FAIL",
+      "expected": "PIN-Abfrage statt Vorschau",
+      "observed": "PIN-Abfrage=false, Vorschau=true",
+      "ms": 1230
+    },
+    {
+      "id": "B4",
+      "covers": "S3 · Speicherübersicht",
+      "title": "Speicherstatus → Vorschau einer gesperrten Karte",
+      "status": "FAIL",
+      "expected": "PIN-Abfrage statt Vorschau",
+      "observed": "PIN-Abfrage=false, Vorschau=true",
+      "ms": 1231
+    },
+    {
+      "id": "B5",
+      "covers": "S3 · Favoriten/Zuletzt (Kontrolle)",
+      "title": "Favoriten- und Verlaufseintrag einer gesperrten Karte öffnen",
+      "status": "PASS",
+      "expected": "PIN-Abfrage statt Vorschau",
+      "observed": "Favoriten: PIN-Abfrage=true, Vorschau=false",
+      "ms": 1242
+    },
+    {
+      "id": "B6",
+      "covers": "S3 · Menüs und Kartenaktionen",
+      "title": "Kontextmenü und Kartenschaltflächen einer gesperrten Karte bieten keinen Inhaltszugriff",
+      "status": "PASS",
+      "expected": "Nur PIN-Anzeige, PIN entfernen, Details, Umbenennen, Favorit, Löschen",
+      "observed": "Menü=[\"Mit PIN anzeigen\",\"PIN entfernen\",\"Details\",\"Umbenennen\",\"Zu Favoriten hinzufügen\",\"Löschen\"]; Inline-Editor=false; Drag-out=false",
+      "ms": 921
+    },
+    {
+      "id": "B7",
+      "covers": "S3 · N5b",
+      "title": "PIN-entsperrte Vorschau ist schreibgeschützt; Kopieren/Herunterladen liefern den Klartext",
+      "status": "FAIL",
+      "expected": "Klartext sichtbar; „Inhalt bearbeiten“ deaktiviert, kein „Teilen“; Kopieren/Download = Klartext; gespeicherte Karte unverändert verschlüsselt",
+      "observed": "Klartext sichtbar=true; Schaltflächen=[{\"t\":\"Teilen\",\"disabled\":false},{\"t\":\"Kopieren\",\"disabled\":false},{\"t\":\"Inhalt bearbeiten\",\"disabled\":false},{\"t\":\"Herunterladen\",\"disabled\":false}]; Editor geöffnet=true (Änderung an der Kopie, Toast \"Text nicht übernommen · Karte wurde inzwischen ersetzt\"); Zwischenablage=Klartext false; Download=Klartext false; gespeicherte Karte unverändert=true",
+      "ms": 1608
+    },
+    {
+      "id": "B8",
+      "covers": "S3 · N5a",
+      "title": "Umgehungsvorschau → „Inhalt bearbeiten“ → Speichern darf die gesperrte Karte nicht mit Klartext überschreiben",
+      "status": "FAIL",
+      "expected": "Kein Weg zum Editor; Karte bleibt unverändert verschlüsselt",
+      "observed": "Pfad: Vorschau ohne PIN → Editor; gespeichert unverändert=false; halb gesperrt (locked + Klartext)=true",
+      "ms": 2209
+    },
+    {
+      "id": "B9",
+      "covers": "S3 · Fehlerpfade",
+      "title": "Falscher PIN und beschädigte PIN-Daten: keine Vorschau, ehrliche Meldung, Karte unverändert",
+      "status": "FAIL",
+      "expected": "Falscher PIN → „Falscher PIN“; beschädigte Daten → „… beschädigt …“; keine Vorschau; Karte unverändert",
+      "observed": "falscher PIN: Toast \"Falscher PIN\", Vorschau=false; beschädigt: Toast \"Falscher PIN\", Vorschau=false; PIN entfernen: \"Falscher PIN\"; unverändert=true",
+      "ms": 4253
+    },
+    {
+      "id": "C1",
+      "covers": "S4 · Testvektoren",
+      "title": "Format-Kompatibilität in beide Richtungen: Node-Vektor → App, App → Node-Referenz",
+      "status": "PASS",
+      "expected": "Referenz entschlüsselt App-Chiffrat (Salt 16 B, IV 12 B); App entsperrt Seed-Vektor (PIN 1234) zum Originaltext",
+      "observed": "Referenz=Original true; Salt/IV-Längen ok=true; Seed entsperrt=true, Felder entfernt=true",
+      "ms": 4589
+    },
+    {
+      "id": "C1b",
+      "covers": "S4 · PIN bytegenau",
+      "title": "PIN mit Leerzeichen und NFC-Umlaut: nur die exakte Eingabe entsperrt",
+      "status": "PASS",
+      "expected": "getrimmt → Falscher PIN; NFD → Falscher PIN; exakt → entsperrt",
+      "observed": "{\"trimmed\":\"Falscher PIN\",\"nfd\":\"Falscher PIN\",\"exact\":\"entsperrt\"}",
+      "ms": 5507
+    },
+    {
+      "id": "C2",
+      "covers": "S4 · N2 große Dateien",
+      "title": "Großes Bild (~1,4 MB) und große Datei (~600 KB) sperren, extern prüfen, ansehen, entsperren",
+      "status": "FAIL",
+      "expected": "",
+      "observed": "Harness-/Testfehler: page.waitForSelector: Timeout 8000ms exceeded.",
+      "ms": 16811
+    },
+    {
+      "id": "C3",
+      "covers": "S4 · Grenze",
+      "title": "Sperren einer Karte, deren Chiffrat nicht mehr in den lokalen Speicher passt",
+      "status": "FAIL",
+      "expected": "Klare Meldung, Karte unverändert, kein Undo-Eintrag",
+      "observed": "Toast=\"\"; gespeichert unverändert=true; UI gesperrt=false; Strg+Z: \"Rückgängig gemacht\"; Seitenfehler=[\"RangeError: Maximum call stack size exceeded\"]",
+      "ms": 4439
+    },
+    {
+      "id": "C4",
+      "covers": "S4 · Verschlüsselungsfehler",
+      "title": "crypto.subtle.encrypt schlägt fehl: keine halbe Sperre, kein Erfolg, kein Undo-Eintrag",
+      "status": "FAIL",
+      "expected": "„Sperren fehlgeschlagen · Karte bleibt unverändert“; gespeichert und UI unverändert; Strg+Z: nichts rückgängig zu machen",
+      "observed": "Toast=\"\"; gespeichert unverändert=true; UI gesperrt=false; Strg+Z: \"Rückgängig gemacht\"; Seitenfehler=[\"OperationError: simuliert\"]",
+      "ms": 3100
+    },
+    {
+      "id": "C5",
+      "covers": "S4 · Legacy-Backups",
+      "title": "Backup v1 und Legacy-Rohformat mit PIN-Karten importieren und entsperren",
+      "status": "PASS",
+      "expected": "PIN-Karte aus beiden Formaten mit PIN 1234 lesbar",
+      "observed": "Backup v1: true; Legacy-Rohformat: true",
+      "ms": 3561
+    }
+  ],
+  "externalHostsRequested": [
+    "fonts.googleapis.com",
+    "cdnjs.cloudflare.com",
+    "cdn.jsdelivr.net",
+    "example.invalid"
+  ],
+  "supabaseContacted": false,
+  "note": "All external hosts intercepted (aborted or served locally); Supabase replaced by an in-memory mock; synthetic data only."
+}
