@@ -322,6 +322,19 @@ import { showToast } from './ui/toast.js';
     }
     try{ return new Blob([data]).size; }catch(e){ return data.length; }
   }
+  // R02: colors, MIME types and payload references arrive from imports, cloud snapshots and old backups.
+  // Only values the app itself produces survive; everything else is dropped before it reaches a sink.
+  const SAFE_HEX_COLOR = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+  const SAFE_MIME = /^[a-z0-9][\w!#$&^.+-]*\/[a-z0-9][\w!#$&^.+-]*(?:\s*;\s*[\w!#$&^.+-]+=(?:[\w!#$&^.+-]+|"[^"\\\r\n]*"))*$/i;
+  function normalizedSpaceColor(value){
+    if(typeof value !== 'string') return null;
+    const color = value.trim();
+    return SAFE_HEX_COLOR.test(color) ? color : null;
+  }
+  function normalizedMime(value, fallback){
+    return typeof value === 'string' && SAFE_MIME.test(value) ? value : fallback;
+  }
+  function isDataUrl(value){ return typeof value === 'string' && /^data:/i.test(value); }
   function normalizeItem(rawItem, itemId){
     const item = isPlainObject(rawItem) ? {...rawItem} : {};
     item.id = itemId;
@@ -335,8 +348,10 @@ import { showToast } from './ui/toast.js';
       const rawIds = Array.isArray(item.itemIds) ? item.itemIds : [];
       item.itemIds = [...new Set(rawIds.filter(id=>typeof id === 'string' && id && id !== itemId))];
     } else {
+      // Non-text payloads are only ever stored as data: URLs; javascript:, http: and other schemes are dropped.
+      if(item.type !== 'text' && item.data != null && !isDataUrl(item.data)) item.data = null;
       item.size = normalizedSize(item.size, item.data);
-      if(typeof item.mime !== 'string' || !item.mime) item.mime = item.type === 'text' ? 'text/plain' : 'application/octet-stream';
+      item.mime = normalizedMime(item.mime, item.type === 'text' ? 'text/plain' : 'application/octet-stream');
     }
     ['favorite','pinned','locked'].forEach(key=>{
       if(item[key] !== true) delete item[key];
@@ -421,7 +436,8 @@ import { showToast } from './ui/toast.js';
         name:normalizedString(rawSpace.name, 'Unbenannter Space'),
         sortMode:SORT_MODES[rawSpace.sortMode] ? rawSpace.sortMode : 'manual'
       };
-      if(typeof space.color !== 'string' || !space.color.trim()) delete space.color;
+      const color = normalizedSpaceColor(rawSpace.color);
+      if(color) space.color = color; else delete space.color;
       spaces.push(space);
     }
     if(!spaces.length){
@@ -662,6 +678,17 @@ import { showToast } from './ui/toast.js';
     a.href = url; a.download = filename; a.click();
     setTimeout(()=>URL.revokeObjectURL(url), 4000);
   }
+  // Decodes a stored data: URL locally (no fetch, no navigation). Any other reference yields null.
+  function dataUrlToBlob(dataUrl, fallbackMime){
+    if(!isDataUrl(dataUrl)) return null;
+    const comma = dataUrl.indexOf(',');
+    const header = comma < 0 ? dataUrl.slice(5) : dataUrl.slice(5, comma);
+    const payload = comma < 0 ? '' : dataUrl.slice(comma + 1);
+    const base64 = /;base64$/i.test(header);
+    const type = normalizedMime(base64 ? header.slice(0, -7) : header, fallbackMime || 'application/octet-stream');
+    try{ return new Blob([base64 ? base64ToBuf(payload) : decodeURIComponent(payload)], {type}); }
+    catch(e){ return null; }
+  }
   async function migrateFromLegacyWindowStorage(){
     // best-effort one-time import from an earlier version of this tool that used window.storage
     try{
@@ -827,7 +854,7 @@ import { showToast } from './ui/toast.js';
   function buildSpaceContextMenu(sp, tabEl){
     const rows = [];
     rows.push({icon:ICONS.rename, label:'Umbenennen', onClick:()=>enterTabRenameMode(tabEl, sp)});
-    rows.push({icon:`<span style="width:14px;height:14px;border-radius:50%;background:${sp.color||'#c7cbd3'};display:inline-block;"></span>`, label:'Farbe wählen', onClick:()=>openColorPicker(tabEl.querySelector('.tab-dot') || tabEl, sp)});
+    rows.push({swatch:sp.color||'#c7cbd3', label:'Farbe wählen', onClick:()=>openColorPicker(tabEl.querySelector('.tab-dot') || tabEl, sp)});
     rows.push({sep:true});
     rows.push({icon:ICONS.duplicate, label:'Space duplizieren', onClick:()=>duplicateSpace(sp)});
     rows.push({icon:ICONS.download, label:'Als JSON exportieren', onClick:()=>exportSpaceAsJson(sp)});
@@ -2058,6 +2085,13 @@ import { showToast } from './ui/toast.js';
   let lastCtxPos = {x:0,y:0};
   let submenuCloseTimer = null;
 
+  function colorSwatch(color){
+    const dot=document.createElement('span');
+    dot.style.cssText='width:14px;height:14px;border-radius:50%;display:inline-block;';
+    if(color) dot.style.background=normalizedSpaceColor(color) || '#c7cbd3';
+    else dot.style.border='2px solid #c7cbd3';
+    return dot;
+  }
   function renderContextRows(container, rows, isSubmenu){
     container.innerHTML = '';
     rows.forEach(r=>{
@@ -2065,7 +2099,10 @@ import { showToast } from './ui/toast.js';
       if(r.header){ const label=document.createElement('div'); label.className='ctx-label'; label.textContent=r.label; container.appendChild(label); return; }
       const row=document.createElement('div');
       row.className='ctx-row'+(r.danger?' danger':'')+(r.disabled?' disabled':'')+(r.submenu?' has-submenu':'');
-      row.innerHTML=`${r.icon||''}<span>${r.label}</span>`;
+      // r.icon is static app markup; labels (space names, …) and swatch colors are untrusted and never parsed as HTML.
+      if(r.swatch !== undefined) row.appendChild(colorSwatch(r.swatch));
+      else if(r.icon) row.insertAdjacentHTML('beforeend', r.icon);
+      const label=document.createElement('span'); label.textContent=r.label; row.appendChild(label);
       if(r.submenu){
         const open=()=>openContextSubmenu(row,r.submenu);
         row.addEventListener('mouseenter',open);
@@ -2797,9 +2834,11 @@ import { showToast } from './ui/toast.js';
     for(const id of folder.itemIds){
       const it = data.items[id];
       if(!it || it.type==='folder') continue;
+      const blob = it.type === 'text' ? null : dataUrlToBlob(it.data, it.mime);
+      if(it.type !== 'text' && !blob) continue;
       const filename = exportFilename(it, used);
-      if(it.type === 'text'){ zip.file(filename, it.data); }
-      else { const base64 = (it.data.split(',')[1]) || ''; zip.file(filename, base64, {base64:true}); }
+      if(it.type === 'text'){ zip.file(filename, it.data ?? ''); }
+      else { zip.file(filename, blob); }
       count++;
     }
     if(!count) return null;
@@ -2823,7 +2862,8 @@ import { showToast } from './ui/toast.js';
 
   async function itemToShareFile(item){
     if(item.type === 'text') return null; // handled as text, not a file
-    const blob = await (await fetch(item.data)).blob();
+    const blob = dataUrlToBlob(item.data, item.mime);
+    if(!blob) return null;
     return new File([blob], displayName(item), {type: blob.type || item.mime || 'application/octet-stream'});
   }
   async function nativeShare(item){
@@ -2864,7 +2904,9 @@ import { showToast } from './ui/toast.js';
     rows.forEach(r=>{
       const row = document.createElement('div');
       row.className = 'share-row';
-      row.innerHTML = `<span class="share-icon">${r.icon}</span><span>${r.label}</span>`;
+      const icon = document.createElement('span'); icon.className = 'share-icon'; icon.innerHTML = r.icon;
+      const label = document.createElement('span'); label.textContent = r.label;
+      row.append(icon, label);
       row.addEventListener('click', r.onClick);
       shareOptions.appendChild(row);
     });
@@ -3066,7 +3108,7 @@ import { showToast } from './ui/toast.js';
     } else {
       const meta = extMeta(item.name);
       const w = document.createElement('div'); w.className='file-icon-wrap'; w.style.color=meta.fg;
-      w.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="file-badge" style="background:${meta.bg};color:${meta.fg}">${meta.label}</span>`;
+      w.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="file-badge" style="background:${meta.bg};color:${meta.fg}">${escapeHtml(meta.label)}</span>`;
       thumb.appendChild(w);
     }
     card.appendChild(thumb);
@@ -3164,6 +3206,7 @@ import { showToast } from './ui/toast.js';
       const filename=exportFilename(item,used);
       const mime=item.type==='text'?'text/plain':(item.mime||'application/octet-stream');
       const url=item.type==='text'?('data:text/plain,'+encodeURIComponent(item.data)):item.data;
+      if(!isDataUrl(url)) return;
       event.dataTransfer.setData('DownloadURL',`${mime}:${filename}:${url}`);
       event.dataTransfer.effectAllowed='copy';
     }catch(error){}
@@ -3677,6 +3720,7 @@ import { showToast } from './ui/toast.js';
   }
 
   function imageDataUrlToPngBlob(dataUrl){
+    if(!isDataUrl(dataUrl)) return Promise.reject(new Error('not a data URL'));
     return new Promise((resolve, reject)=>{
       const img = new Image();
       img.onload = ()=>{
@@ -3699,17 +3743,18 @@ import { showToast } from './ui/toast.js';
         markRecent(item,'copy'); showToast('Bild kopiert');
       }
       else {
-        try{ const blob = await (await fetch(item.data)).blob(); await navigator.clipboard.write([new ClipboardItem({[blob.type||'application/octet-stream']: blob})]); markRecent(item,'copy'); showToast('Kopiert'); }
+        try{ const blob = dataUrlToBlob(item.data, item.mime); if(!blob) throw new Error('no data'); await navigator.clipboard.write([new ClipboardItem({[blob.type||'application/octet-stream']: blob})]); markRecent(item,'copy'); showToast('Kopiert'); }
         catch(err){ showToast('Zwischenablage unterstützt diesen Typ nicht — nutze Herunterladen in der Vorschau'); }
       }
     }catch(e){ showToast('Kopieren fehlgeschlagen — nutze Herunterladen in der Vorschau'); }
   }
   function downloadItem(item){
     if(item.type==='folder') return;
-    const a = document.createElement('a');
-    if(item.type==='text'){ const blob = new Blob([item.data], {type:'text/plain'}); a.href = URL.createObjectURL(blob); a.download = (displayName(item)||'text')+'.txt'; }
-    else { a.href = item.data; a.download = displayName(item); }
-    a.click();
+    if(item.type==='text'){ downloadBlob(new Blob([item.data ?? ''], {type:'text/plain'}), (displayName(item)||'text')+'.txt'); return; }
+    // Files always download from a local Blob; the stored reference is never used as a link target.
+    const blob = dataUrlToBlob(item.data, item.mime);
+    if(!blob){ showToast('Download nicht möglich · Dateiinhalt fehlt oder ist ungültig'); return; }
+    downloadBlob(blob, displayName(item));
   }
 
   function openPreview(item){
@@ -3726,7 +3771,7 @@ import { showToast } from './ui/toast.js';
     } else {
       const meta = extMeta(item.name);
       const div = document.createElement('div'); div.className='preview-file';
-      div.innerHTML = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="${meta.fg}" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="file-badge" style="background:${meta.bg};color:${meta.fg}">${meta.label}</span><span>${fmtSize(item.size)}</span>`;
+      div.innerHTML = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="${meta.fg}" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="file-badge" style="background:${meta.bg};color:${meta.fg}">${escapeHtml(meta.label)}</span><span>${fmtSize(item.size)}</span>`;
       previewBody.appendChild(div);
     }
     previewFooter.innerHTML = '';
@@ -4412,7 +4457,8 @@ import { showToast } from './ui/toast.js';
       const importedData = normalizeSpaceData(cloneJson(payload.data));
       state.data[newId] = importedData;
       const newSpace = { id:newId, name:importedName, sortMode:defaultSortModeSetting() };
-      if(typeof payload.color === 'string' && payload.color) newSpace.color = payload.color;
+      const color = normalizedSpaceColor(payload.color);
+      if(color) newSpace.color = color;
       spaces.push(newSpace);
       state.spaces = spaces;
       persistState();
@@ -4505,12 +4551,12 @@ import { showToast } from './ui/toast.js';
       }
     };
     const rows = SPACE_COLORS.map(c=>({
-      icon:`<span style="width:14px;height:14px;border-radius:50%;background:${c};display:inline-block;"></span>`,
+      swatch:c,
       label:'Farbe',
       onClick:()=>applyColor(c)
     }));
     rows.push({sep:true});
-    rows.push({icon:'<span style="width:14px;height:14px;border-radius:50%;border:2px solid #c7cbd3;display:inline-block;"></span>', label:'Kein Label', onClick:()=>applyColor(null)});
+    rows.push({swatch:null, label:'Kein Label', onClick:()=>applyColor(null)});
     showContextMenu(rect.left, rect.bottom+6, rows);
   }
 
