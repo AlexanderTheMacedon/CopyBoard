@@ -9,6 +9,8 @@ const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
 
 const BASE = process.env.CB_BASE || 'http://127.0.0.1:4173/';
+// Path of the preview page: 'preview.html' in the regular multi-page build, '' (root) in the Cloudflare preview-only build.
+const PAGE = BASE + (process.env.CB_PREVIEW_PATH ?? 'preview.html');
 const ORIGIN = new URL(BASE).origin;
 const OUT = process.env.R02_OUT_DIR || path.resolve('test-results');
 const DEV = process.env.E2E_TARGET === 'dev';
@@ -88,7 +90,7 @@ async function openPreview(opts = {}) {
   page.on('request', (r) => {
     if (['fetch', 'xhr', 'eventsource', 'websocket'].includes(r.resourceType())) apiRequests.push(r.url());
   });
-  await page.goto(BASE + 'preview.html', { waitUntil: 'load' });
+  await page.goto(PAGE, { waitUntil: 'load' });
   await page.waitForSelector('.cb-app .cb-tile');
   const clean = async () => {
     const hits = await page.evaluate(() => window.__cbHits);
@@ -280,7 +282,7 @@ test('P9', 'theme light/dark/system and sidebar modes are session-only preferenc
   // System follows the OS preference.
   const sys = await context.newPage();
   await sys.emulateMedia({ colorScheme: 'dark' });
-  await sys.goto(BASE + 'preview.html');
+  await sys.goto(PAGE);
   await sys.waitForSelector('.cb-app');
   const systemDark = await sys.$eval('.cb-app', (e) => e.dataset.theme);
   const reloadDefaults = await sys.$eval('.cb-app', (e) => e.dataset.sidebar);
