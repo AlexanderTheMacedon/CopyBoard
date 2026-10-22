@@ -14,6 +14,10 @@ Status: **catalogued, not hardened.** No CSP or SRI is deployed or enabled. Noth
 
 Vite bundles only first-party code. The CDN `<script>` tags are left untouched in `dist/index.html`.
 
+The React preview (`/preview.html`, Run B) has **no** third-party runtime request: React/React DOM `19.3.1` are exact-pinned npm packages bundled into
+`dist/assets/preview-*.js`; fonts are system fonts; icons are inline SVG. A future CSP for the preview can therefore start from `default-src 'self'`
+(plus `style-src 'unsafe-inline'` for React `style` attributes that only carry CSS custom properties).
+
 ## Candidate policy (untested sketch, do not deploy)
 
 ```

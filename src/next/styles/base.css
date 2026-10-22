@@ -1,0 +1,114 @@
+/* Base layer: reset, typography defaults, focus and accessibility utilities. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: #f8f7fb;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #161520;
+  }
+}
+
+#preview-root {
+  height: 100%;
+}
+
+.cb-app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  background: var(--cb-surface-canvas);
+  color: var(--cb-text-primary);
+  font: var(--cb-text-body);
+  transition: background-color var(--cb-dur-standard) var(--cb-ease-out), color var(--cb-dur-standard) var(--cb-ease-out);
+}
+
+.cb-app :where(h1, h2, h3, h4, p, ul, ol, dl, dd, figure, pre) {
+  margin: 0;
+}
+
+.cb-app :where(ul, ol) {
+  padding: 0;
+  list-style: none;
+}
+
+.cb-app :where(button, input, textarea, select) {
+  font: inherit;
+  color: inherit;
+}
+
+.cb-app :where(button) {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.cb-app :where(button:disabled) {
+  cursor: not-allowed;
+}
+
+.cb-app :where(kbd) {
+  font: var(--cb-text-caption);
+  font-family: var(--cb-font-ui);
+}
+
+/* Focus: always visible for keyboard users, on every surface including frosted layers. */
+.cb-app :focus-visible {
+  outline: var(--cb-focus-width) solid var(--cb-focus-ring);
+  outline-offset: var(--cb-focus-offset);
+}
+
+.cb-app :focus:not(:focus-visible) {
+  outline: none;
+}
+
+.cb-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.cb-skip-link {
+  position: absolute;
+  top: var(--cb-space-2);
+  left: var(--cb-space-2);
+  z-index: 100;
+  padding: var(--cb-space-2) var(--cb-space-4);
+  border-radius: var(--cb-radius-control);
+  background: var(--cb-accent);
+  color: var(--cb-on-accent);
+  font: var(--cb-text-ui);
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.cb-skip-link:focus-visible {
+  transform: none;
+}
+
+.cb-icon {
+  flex: none;
+  display: block;
+}

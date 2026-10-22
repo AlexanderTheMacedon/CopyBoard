@@ -18,29 +18,67 @@ describe('preview track is isolated from the live data path', () => {
     expect(previewInfo.cloudEnabled).toBe(false);
   });
 
-  // Run A guarantee: no second writer, no real save/cloud endpoints. Later runs must pass synthetic fixtures instead.
+  // Run A guarantee, extended in Run B: no second writer, no real save/cloud endpoints, no device APIs, synthetic fixtures only.
   const forbidden = [
+    // storage
     /localStorage/,
     /sessionStorage/,
-    /indexedDB/,
+    /indexedDB/i,
+    /document\.cookie/,
+    /caches\./,
     /copyboard_/,
+    // network / backend
     /supabase/i,
     /\bfetch\s*\(/,
     /XMLHttpRequest/,
+    /WebSocket/,
+    /EventSource/,
+    /sendBeacon/,
+    /https?:\/\//,
+    // device and content access (clipboard, microphone, files, uploads)
+    /navigator\.clipboard/,
+    /\bclipboardData\b/,
+    /getUserMedia|mediaDevices|MediaRecorder/,
+    /\bFileReader\b/,
+    /dataTransfer\.(files|items|getData)/,
+    /showOpenFilePicker|showSaveFilePicker/,
+    /type=["']file["']/,
+    // HTML injection
+    /dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML/,
+    // legacy app modules
     /js\/app\.js/,
     /js\/config\/constants/,
+    /['"](\.\.\/)+js\//,
   ];
 
-  for (const file of sourceFiles(nextDir)) {
-    it(`${file.slice(root.length + 1)} has no storage, network or legacy-app access`, () => {
+  const files = sourceFiles(nextDir);
+
+  it('covers the React sources', () => {
+    expect(files.some((f) => f.endsWith('.tsx'))).toBe(true);
+    expect(files.some((f) => f.endsWith('.css'))).toBe(true);
+  });
+
+  for (const file of files) {
+    it(`${file.slice(root.length + 1)} has no storage, network, device or legacy-app access`, () => {
       const text = readFileSync(file, 'utf8');
       for (const pattern of forbidden) expect(text, String(pattern)).not.toMatch(pattern);
     });
   }
 
+  it('imports stay inside src/next, React or CSS', () => {
+    for (const file of files.filter((f) => /\.tsx?$/.test(f))) {
+      const specifiers = [...readFileSync(file, 'utf8').matchAll(/^import[^'"]*['"]([^'"]+)['"]/gm)].map((m) => m[1] ?? '');
+      for (const spec of specifiers) {
+        const external = !spec.startsWith('.');
+        if (external) expect(['react', 'react-dom/client'], `${file}: ${spec}`).toContain(spec);
+        else expect(resolve(file, '..', spec).startsWith(nextDir), `${file}: ${spec}`).toBe(true);
+      }
+    }
+  });
+
   it('preview.html loads only the preview entry', () => {
     const html = readFileSync(join(root, 'preview.html'), 'utf8');
-    expect(html).toContain('./src/next/main.ts');
-    expect(html).not.toMatch(/src\/js\/app\.js|https?:\/\//);
+    expect(html).toContain('src="./src/next/main.tsx"');
+    expect(html).not.toMatch(/src\/js\/|https?:\/\//);
   });
 });

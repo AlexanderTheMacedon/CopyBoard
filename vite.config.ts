@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import react from '@vitejs/plugin-react';
+import type { IndexHtmlTransformHook } from 'vite';
 import { defineConfig, type Plugin } from 'vitest/config';
 
 const root = import.meta.dirname;
@@ -15,12 +17,26 @@ function emitCname(): Plugin {
   };
 }
 
+// React (JSX + Fast Refresh) for the preview only. The legacy ESM sources under src/js are never transformed, and the dev-only
+// Fast Refresh preamble is injected into preview.html only, so the legacy page "/" is served exactly as before.
+function reactPreviewOnly(): Plugin[] {
+  return react({ include: /\/src\/next\/.*\.tsx?$/ }).map((plugin) => {
+    const hook = plugin.transformIndexHtml;
+    if (!hook) return plugin;
+    const handler: IndexHtmlTransformHook = typeof hook === 'function' ? hook : hook.handler;
+    const scoped: IndexHtmlTransformHook = function (this: unknown, html, ctx) {
+      return ctx.filename.endsWith('preview.html') ? handler.call(this as never, html, ctx) : undefined;
+    };
+    return { ...plugin, transformIndexHtml: typeof hook === 'function' ? scoped : { ...hook, handler: scoped } };
+  });
+}
+
 export default defineConfig({
   // Relative base keeps asset URLs valid under any origin or sub-path, like the unbundled legacy app.
   base: './',
   // Multi-page app without SPA fallback: unknown paths 404 like on static hosting.
   appType: 'mpa',
-  plugins: [emitCname()],
+  plugins: [reactPreviewOnly(), emitCname()],
   server: { host: '127.0.0.1', port: 5173 },
   preview: { host: '127.0.0.1', port: 4173 },
   build: {
@@ -35,7 +51,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['tests/unit/**/*.test.ts'],
+    include: ['tests/unit/**/*.test.{ts,tsx}'],
     environment: 'node',
   },
 });

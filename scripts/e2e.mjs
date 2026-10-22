@@ -1,6 +1,7 @@
 // Starts the app (built `dist` via vite preview, or the dev server) on a free port and runs the Playwright suites against it.
 //   node scripts/e2e.mjs smoke [--target=dev]   bounded, deterministic subset (PR CI)
 //   node scripts/e2e.mjs full  [--target=dev]   complete R02 acceptance suite (manual, a few minutes)
+// Both include the React preview suite (tests/e2e/preview.mjs).
 // Safety: the harness intercepts every request outside the app origin and replaces Supabase by an in-memory mock.
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
@@ -52,6 +53,8 @@ const env = {
 const R02_SMOKE_IDS = '^(X1|X3|X6|P1|P2|B1|B8|C1)$';
 const steps = [];
 if (suite === 'smoke') steps.push(['tests/e2e/smoke.mjs', []]);
+// React preview (Run B): interactions plus runtime isolation (storage, network, clipboard, microphone, drop data).
+steps.push(['tests/e2e/preview.mjs', []]);
 steps.push(['docs/runs/R02-security-privacy-hardening/evidence/r02-security.mjs', suite === 'smoke' ? [R02_SMOKE_IDS] : []]);
 
 let exitCode = 0;

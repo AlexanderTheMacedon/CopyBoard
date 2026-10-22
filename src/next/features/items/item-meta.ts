@@ -1,0 +1,57 @@
+import type { IconName } from '../../components/Icon';
+import type { Item, ItemKind, SpaceColor } from '../../domain/types';
+
+export const kindLabel: Record<ItemKind, string> = {
+  text: 'Text',
+  markdown: 'Markdown',
+  code: 'Code',
+  image: 'Bild',
+  file: 'Datei',
+  audio: 'Audio',
+};
+
+export const kindIcon: Record<ItemKind, IconName> = {
+  text: 'text',
+  markdown: 'hash',
+  code: 'code',
+  image: 'image',
+  file: 'file',
+  audio: 'waveform',
+};
+
+/** CSS custom property holding the space identity colour (tokens.css). */
+export const spaceColorVar = (color: SpaceColor): string => `var(--cb-space-${color})`;
+
+const dateFormat = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', timeZone: 'Europe/Berlin' });
+const dateTimeFormat = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Berlin' });
+
+export const formatDate = (iso: string): string => dateFormat.format(new Date(iso));
+export const formatDateTime = (iso: string): string => dateTimeFormat.format(new Date(iso));
+
+export function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1).replace('.', ',')} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+}
+
+export function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = String(seconds % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+export const fileExtension = (fileName: string): string => {
+  const dot = fileName.lastIndexOf('.');
+  return dot > 0 ? fileName.slice(dot + 1).toUpperCase() : 'DATEI';
+};
+
+/** Plain-text excerpt for previews; Markdown markers are stripped, nothing is interpreted as HTML. */
+export function excerpt(item: Item, max = 180): string {
+  if (item.kind !== 'text' && item.kind !== 'markdown') return '';
+  const plain = item.body
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^[-*]\s+/gm, '• ')
+    .replace(/\s*\n+\s*/g, ' ')
+    .trim();
+  return plain.length > max ? `${plain.slice(0, max - 1).trimEnd()}…` : plain;
+}

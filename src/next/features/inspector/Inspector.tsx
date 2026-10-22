@@ -1,0 +1,157 @@
+import { useEffect, useRef, type CSSProperties, type KeyboardEvent } from 'react';
+import { useInspectedItem, usePreview } from '../../app/context';
+import { Icon } from '../../components/Icon';
+import { IconButton } from '../../components/IconButton';
+import type { Item } from '../../domain/types';
+import { ImageSwatch, Waveform } from '../grid/ItemPreview';
+import { tileOpenButtonId } from '../grid/ItemTile';
+import { itemActions } from '../items/item-actions';
+import { formatDateTime, formatDuration, formatSize, kindIcon, kindLabel, spaceColorVar } from '../items/item-meta';
+import { useRunItemAction } from '../items/useItemActions';
+
+function InspectorContent({ item }: { item: Item }) {
+  switch (item.kind) {
+    case 'text':
+    case 'markdown':
+      return <p className="cb-inspector__text">{item.body}</p>;
+    case 'code':
+      return (
+        <pre className="cb-inspector__code">
+          <code>{item.body}</code>
+        </pre>
+      );
+    case 'image':
+      return (
+        <figure className="cb-inspector__figure">
+          <ImageSwatch item={item} className="cb-inspector__image" />
+          <figcaption>
+            {item.width} × {item.height} px · synthetische Vorschau
+          </figcaption>
+        </figure>
+      );
+    case 'file':
+      return (
+        <dl className="cb-inspector__facts">
+          <dt>Dateiname</dt>
+          <dd>{item.fileName}</dd>
+          <dt>Größe</dt>
+          <dd>{formatSize(item.sizeBytes)}</dd>
+        </dl>
+      );
+    case 'audio':
+      return (
+        <div className="cb-inspector__audio">
+          <Waveform item={item} className="cb-waveform cb-waveform--large" />
+          <p>
+            Dauer {formatDuration(item.durationSec)} · Wiedergabe in der Vorschau nicht verfügbar
+          </p>
+        </div>
+      );
+  }
+}
+
+/** Focus the tile that opened the inspector, or the workspace as a stable fallback (Blueprint 03 §3.2). */
+function restoreBoardFocus(itemId: string) {
+  requestAnimationFrame(() => {
+    const target = document.getElementById(tileOpenButtonId(itemId)) ?? document.getElementById('cb-main');
+    target?.focus();
+  });
+}
+
+/**
+ * Adaptive Item Inspector (D-004, DS-C20): non-modal detail panel, board stays visible. On narrow screens CSS turns it into a
+ * full sheet. Initial focus goes to the title; closing returns focus to the card.
+ */
+export function Inspector() {
+  const { state, dispatch, library } = usePreview();
+  const item = useInspectedItem();
+  const runAction = useRunItemAction();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const itemId = item?.id;
+
+  useEffect(() => {
+    if (!itemId) return;
+    // Deferred so a closing dialog (e.g. the search palette) has restored its focus first.
+    const frame = requestAnimationFrame(() => headingRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [itemId]);
+
+  if (!item) return null;
+  const space = library.getSpace(item.spaceId);
+
+  const close = () => {
+    dispatch({ type: 'closeInspector' });
+    restoreBoardFocus(item.id);
+  };
+
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && !event.defaultPrevented) {
+      event.preventDefault();
+      close();
+    }
+  };
+
+  return (
+    <aside className="cb-inspector" aria-labelledby="cb-inspector-title" onKeyDown={onKeyDown} data-kind={item.kind}>
+      <div className="cb-inspector__header">
+        <p className="cb-inspector__kind">
+          <Icon name={kindIcon[item.kind]} size={16} />
+          {kindLabel[item.kind]}
+        </p>
+        <IconButton icon="x" label="Inspector schließen" onClick={close} />
+      </div>
+      <h2 id="cb-inspector-title" ref={headingRef} tabIndex={-1} className="cb-inspector__title">
+        {item.title}
+      </h2>
+      {space && (
+        <p className="cb-inspector__space">
+          <span className="cb-space-chip" style={{ '--cb-chip': spaceColorVar(space.color) } as CSSProperties}>
+            {space.name}
+          </span>
+          {item.favorite && (
+            <span className="cb-inspector__favorite">
+              <Icon name="star" size={14} /> Favorit
+            </span>
+          )}
+        </p>
+      )}
+
+      <div className="cb-inspector__actions" role="group" aria-label="Aktionen">
+        {itemActions(item, state.location).map((action) => (
+          <button key={action.id} type="button" className="cb-button cb-button--secondary" onClick={() => runAction(action, item)}>
+            <Icon name={action.icon} size={16} />
+            <span>{action.label}</span>
+            {action.availability === 'demo' && <span className="cb-demo-badge">Demo</span>}
+          </button>
+        ))}
+      </div>
+
+      <div className="cb-inspector__content">
+        <InspectorContent item={item} />
+      </div>
+
+      <dl className="cb-inspector__facts cb-inspector__facts--meta">
+        <dt>Erstellt</dt>
+        <dd>
+          <time dateTime={item.createdAt}>{formatDateTime(item.createdAt)}</time>
+        </dd>
+        <dt>Geändert</dt>
+        <dd>
+          <time dateTime={item.updatedAt}>{formatDateTime(item.updatedAt)}</time>
+        </dd>
+        {item.tags.length > 0 && (
+          <>
+            <dt>Tags</dt>
+            <dd className="cb-inspector__tags">
+              {item.tags.map((tag) => (
+                <span key={tag} className="cb-tag">
+                  {tag}
+                </span>
+              ))}
+            </dd>
+          </>
+        )}
+      </dl>
+    </aside>
+  );
+}

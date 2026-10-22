@@ -1,0 +1,220 @@
+/*
+ * CopyBoard preview design tokens.
+ * Values are the [PROPOSAL] candidates from Blueprint 04 (§1–§4, §8) and Blueprint 03 (§4.2); they are NOT final tokens.
+ * Layers: primitives (--cb-p-*) → semantic (--cb-*) → component (--cb-card-*, --cb-dock-* …). Components only use semantic and
+ * component tokens. The design run recalibrates values here without touching component code.
+ */
+
+.cb-app {
+  /* --- Primitives: brand study D-013 --- */
+  --cb-p-mist: #f5f3fa;
+  --cb-p-lilac: #c4b5fd;
+  --cb-p-orchid: #dbb6f5;
+  --cb-p-periwinkle: #aeb8fa;
+  --cb-p-iris: #7064c8;
+
+  /* --- Space identity colours (D-018/D-031): ambient tint and small markers only, never status --- */
+  --cb-space-lavender: #bda7f4;
+  --cb-space-sky: #a7c9eb;
+  --cb-space-sage: #b8d9bd;
+  --cb-space-peach: #f2c7a5;
+  --cb-space-rose: #f0b4c8;
+
+  /* --- Spacing (Blueprint 04 §2.1) --- */
+  --cb-space-1: 4px;
+  --cb-space-2: 8px;
+  --cb-space-3: 12px;
+  --cb-space-4: 16px;
+  --cb-space-5: 20px;
+  --cb-space-6: 24px;
+  --cb-space-8: 32px;
+  --cb-space-10: 40px;
+  --cb-space-12: 48px;
+
+  /* --- Radius (D-014, Blueprint 04 §2.2). The boost compensates the optically smaller squircle corner. --- */
+  --cb-squircle-boost: 1;
+  --cb-radius-control-sm: calc(8px * var(--cb-squircle-boost));
+  --cb-radius-control: calc(12px * var(--cb-squircle-boost));
+  --cb-radius-card: calc(18px * var(--cb-squircle-boost));
+  --cb-radius-panel: calc(22px * var(--cb-squircle-boost));
+  --cb-radius-sheet: calc(28px * var(--cb-squircle-boost));
+  --cb-radius-chip: 999px;
+
+  /* --- Typography (D-016, Blueprint 04 §3.1) --- */
+  --cb-font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --cb-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --cb-text-display: 600 clamp(28px, 3.2vw, 36px) / 1.17 var(--cb-font-ui);
+  --cb-text-section: 600 24px / 31px var(--cb-font-ui);
+  --cb-text-panel: 600 18px / 25px var(--cb-font-ui);
+  --cb-text-body: 400 15px / 23px var(--cb-font-ui);
+  --cb-text-ui: 500 14px / 20px var(--cb-font-ui);
+  --cb-text-meta: 400 13px / 19px var(--cb-font-ui);
+  --cb-text-caption: 500 12px / 17px var(--cb-font-ui);
+  --cb-text-mono: 400 13px / 1.55 var(--cb-font-mono);
+
+  /* --- Motion (D-017, Blueprint 03 §4.2 / 04 §8.1). Reduced motion collapses durations below. --- */
+  --cb-dur-instant: 80ms;
+  --cb-dur-micro: 140ms;
+  --cb-dur-swift: 200ms;
+  --cb-dur-standard: 280ms;
+  --cb-dur-expressive: 420ms;
+  --cb-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --cb-ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --cb-hover-lift: -2px;
+  --cb-settle-scale: 1.02;
+
+  /* --- Layout (Blueprint 04 §4.2 candidates) --- */
+  --cb-rail-w: 64px;
+  --cb-sidebar-w: 248px;
+  --cb-inspector-w: 380px;
+  --cb-toolbar-h: 56px;
+  --cb-dock-h: 64px;
+  --cb-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --cb-content-max: 1280px;
+  --cb-gutter: clamp(16px, 3vw, 40px);
+
+  /* --- Focus (Blueprint 04 §5.1: 2 px, strong contrast, offset) --- */
+  --cb-focus-width: 2px;
+  --cb-focus-offset: 2px;
+}
+
+/* --- Semantic colours: light (Blueprint 04 §1.2) --- */
+.cb-app,
+.cb-app[data-theme='light'] {
+  color-scheme: light;
+  --cb-surface-canvas: #f8f7fb;
+  --cb-surface-base: #ffffff;
+  --cb-surface-subtle: #f4f1f8;
+  --cb-surface-hover: #f1edf8;
+  --cb-surface-selected: #ebe4fc;
+  --cb-text-primary: #292536;
+  --cb-text-secondary: #625c70;
+  --cb-text-tertiary: #716b7f;
+  --cb-border-subtle: #e4deec;
+  --cb-border-strong: #cfc6dd;
+  --cb-accent: #7064c8;
+  --cb-accent-hover: #5b4eb8;
+  --cb-on-accent: #ffffff;
+  --cb-focus-ring: #5b4eb8;
+  --cb-status-success: #216e52;
+  --cb-status-warning: #875a18;
+  --cb-status-error: #a8334d;
+  --cb-status-info: #3e5fab;
+  /* Material tiers (D-015, Blueprint 04 §2.3): opaque majority, few frosted accents */
+  --cb-frosted-popover: rgb(255 255 255 / 0.84);
+  --cb-frosted-floating: rgb(255 255 255 / 0.82);
+  --cb-frosted-sticky: rgb(248 247 251 / 0.92);
+  --cb-blur-popover: 22px;
+  --cb-blur-sticky: 14px;
+  --cb-backdrop: rgb(41 37 54 / 0.28);
+  --cb-shadow-1: 0 1px 2px rgb(41 37 54 / 0.06), 0 2px 8px rgb(41 37 54 / 0.04);
+  --cb-shadow-2: 0 4px 16px rgb(41 37 54 / 0.08), 0 1px 3px rgb(41 37 54 / 0.06);
+  --cb-shadow-3: 0 12px 32px rgb(41 37 54 / 0.12), 0 2px 6px rgb(41 37 54 / 0.06);
+  --cb-shadow-4: 0 24px 64px rgb(41 37 54 / 0.18), 0 4px 12px rgb(41 37 54 / 0.08);
+  --cb-ambient-opacity: 0.75;
+}
+
+/* --- Semantic colours: dark, tuned independently (Blueprint 04 §1.3, D-031) --- */
+.cb-app[data-theme='dark'] {
+  color-scheme: dark;
+  --cb-surface-canvas: #161520;
+  --cb-surface-base: #23212e;
+  --cb-surface-subtle: #2d2a3a;
+  --cb-surface-hover: #373247;
+  --cb-surface-selected: #403558;
+  --cb-text-primary: #f5f2fa;
+  --cb-text-secondary: #c8c1d3;
+  --cb-text-tertiary: #aaa1bb;
+  --cb-border-subtle: #484257;
+  --cb-border-strong: #5d566f;
+  --cb-accent: #b9a8ff;
+  --cb-accent-hover: #cbbdff;
+  --cb-on-accent: #211b35;
+  --cb-focus-ring: #cbbdff;
+  --cb-status-success: #83dbb5;
+  --cb-status-warning: #f8cb79;
+  --cb-status-error: #ff9eb0;
+  --cb-status-info: #a0bfff;
+  --cb-frosted-popover: rgb(35 33 46 / 0.84);
+  --cb-frosted-floating: rgb(35 33 46 / 0.86);
+  --cb-frosted-sticky: rgb(22 21 32 / 0.9);
+  --cb-backdrop: rgb(8 7 14 / 0.55);
+  --cb-shadow-1: 0 1px 2px rgb(0 0 0 / 0.3);
+  --cb-shadow-2: 0 4px 16px rgb(0 0 0 / 0.35);
+  --cb-shadow-3: 0 12px 32px rgb(0 0 0 / 0.45);
+  --cb-shadow-4: 0 24px 64px rgb(0 0 0 / 0.55);
+  --cb-ambient-opacity: 0.32;
+}
+
+/* --- Density (D-032, Blueprint 04 §4.1): discrete steps, same grid system --- */
+.cb-grid,
+.cb-grid[data-density='standard'] {
+  --cb-card-min: 220px;
+  --cb-card-gap: 14px;
+  --cb-card-inset: 12px;
+  --cb-preview-h: 124px;
+  --cb-row-min-h: 52px;
+}
+.cb-grid[data-density='comfort'] {
+  --cb-card-min: 272px;
+  --cb-card-gap: 22px;
+  --cb-card-inset: 16px;
+  --cb-preview-h: 184px;
+  --cb-row-min-h: 64px;
+}
+.cb-grid[data-density='compact'] {
+  --cb-card-min: 176px;
+  --cb-card-gap: 10px;
+  --cb-card-inset: 10px;
+  --cb-preview-h: 84px;
+  --cb-row-min-h: 44px;
+}
+
+/* --- Real squircle silhouettes where supported (D-014); border-radius stays the fallback --- */
+@supports (corner-shape: squircle) {
+  .cb-app {
+    --cb-squircle-boost: 1.6;
+  }
+  .cb-squircle,
+  .cb-tile__open,
+  .cb-capture,
+  .cb-inspector__image,
+  .cb-dialog__panel,
+  .cb-popover__panel,
+  .cb-recorder,
+  .cb-dock,
+  .cb-button,
+  .cb-icon-button,
+  .cb-segmented {
+    corner-shape: squircle;
+  }
+}
+
+/* --- Reduced motion (Blueprint 03 §4.5): instant state changes, no transforms or drift --- */
+@media (prefers-reduced-motion: reduce) {
+  .cb-app {
+    --cb-dur-instant: 0ms;
+    --cb-dur-micro: 0ms;
+    --cb-dur-swift: 0ms;
+    --cb-dur-standard: 0ms;
+    --cb-dur-expressive: 0ms;
+    --cb-hover-lift: 0px;
+    --cb-settle-scale: 1;
+  }
+}
+
+/* --- Reduced transparency / no backdrop-filter: opaque fallbacks (D-031 accessibility) --- */
+@media (prefers-reduced-transparency: reduce) {
+  .cb-app[data-theme] {
+    --cb-frosted-popover: var(--cb-surface-base);
+    --cb-frosted-floating: var(--cb-surface-base);
+    --cb-frosted-sticky: var(--cb-surface-canvas);
+  }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .cb-app[data-theme] {
+    --cb-frosted-popover: var(--cb-surface-base);
+    --cb-frosted-floating: var(--cb-surface-base);
+    --cb-frosted-sticky: var(--cb-surface-canvas);
+  }
+}
