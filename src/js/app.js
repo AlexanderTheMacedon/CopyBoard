@@ -3883,8 +3883,12 @@ import { showToast } from './ui/toast.js';
   document.addEventListener('dragover', (e)=>{ e.preventDefault(); });
   document.addEventListener('dragleave', (e)=>{ e.preventDefault(); dragCounter=Math.max(0,dragCounter-1); if(dragCounter===0){ dropzone.classList.remove('drag'); dragFog.classList.remove('active'); } });
   document.addEventListener('drop', async (e)=>{
-    e.preventDefault(); dragCounter=0; dropzone.classList.remove('drag'); dragFog.classList.remove('active');
-    const dt = e.dataTransfer; if(!dt) return;
+    dragCounter=0; dropzone.classList.remove('drag'); dragFog.classList.remove('active');
+    const dt = e.dataTransfer;
+    // Text dropped into a field stays in that field; files are always captured (the default would navigate away).
+    if(!(dt && dt.files && dt.files.length) && e.composedPath().some(isEditableElement)) return;
+    e.preventDefault();
+    if(!dt) return;
     if(dt.files && dt.files.length){ await ingestFiles(dt.files); return; }
     const text = dt.getData('text/uri-list') || dt.getData('text/plain');
     if(text) ingestText(text);
@@ -3892,9 +3896,29 @@ import { showToast } from './ui/toast.js';
   dropzone.addEventListener('click', ()=> fileInput.click());
   fileInput.addEventListener('change', async (e)=>{ await ingestFiles(e.target.files); fileInput.value=''; });
 
+  // A paste becomes a card only when it is aimed at the board itself. Pastes into any editable control
+  // (password, PIN, e-mail, search, notes, inline editors, contenteditable, also inside shadow roots) and
+  // pastes while a dialog is open stay with the browser. Deliberate capture: the "Zwischenablage" dialog or "Einfügen".
+  const NON_EDITABLE_INPUT_TYPES = new Set(['button','checkbox','color','file','hidden','image','radio','range','reset','submit']);
+  const BOARD_PASTE_OVERLAYS = new Set(['folderOverlay']);
+  function isEditableElement(el){
+    if(!el || el.nodeType !== 1) return false;
+    if(el.isContentEditable) return true;
+    if(el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
+    if(el.tagName === 'INPUT') return !NON_EDITABLE_INPUT_TYPES.has(String(el.type || 'text').toLowerCase());
+    return el.getAttribute('role') === 'textbox';
+  }
+  function deepActiveElement(){
+    let el = document.activeElement;
+    while(el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
+    return el;
+  }
+  function isBoardPaste(e){
+    if(e.composedPath().some(isEditableElement) || isEditableElement(deepActiveElement())) return false;
+    return !Array.from(document.querySelectorAll('.overlay.show')).some(overlay=>!BOARD_PASTE_OVERLAYS.has(overlay.id));
+  }
   document.addEventListener('paste', async (e)=>{
-    if(document.activeElement === textArea || document.activeElement === folderTitleInput || document.activeElement === titleInput || document.activeElement === renameInput) return;
-    if(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('tab-rename-input')) return;
+    if(!isBoardPaste(e)) return;
     const cd = e.clipboardData; if(!cd) return;
     let handledFile = false;
     for(const it of Array.from(cd.items)){ if(it.kind==='file'){ const file=it.getAsFile(); if(file){ await ingestFiles([file]); handledFile=true; } } }
