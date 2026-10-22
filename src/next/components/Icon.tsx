@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-// Lucide-like line icons (D-002/Blueprint 04 §3.2): 24 px grid, fine stroke, drawn in-house to avoid a dependency.
+// Lucide-like line icons (D-002/Blueprint 04 §3.2): 24 px grid, fine 1.5 px stroke, drawn in-house to avoid a dependency.
 const paths = {
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   search: (
@@ -93,6 +93,7 @@ const paths = {
   hash: <path d="M5 9.5h14M5 14.5h14M10.5 4.5 9 19.5M15 4.5l-1.5 15" />,
   chevronLeft: <path d="m14.5 6-6 6 6 6" />,
   chevronRight: <path d="m9.5 6 6 6-6 6" />,
+  chevronDown: <path d="m6 9.5 6 6 6-6" />,
   pen: <path d="m15.5 5.5 3 3L8 19l-4 1 1-4Z" />,
   download: <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />,
   columns: (
@@ -122,6 +123,7 @@ const paths = {
   ),
   pause: <path d="M9 6.5v11M15 6.5v11" />,
   stop: <rect x="7" y="7" width="10" height="10" rx="2.5" />,
+  play: <path d="M8 5.5v13l10.5-6.5Z" />,
   info: (
     <>
       <circle cx="12" cy="12" r="8.5" />
@@ -129,6 +131,27 @@ const paths = {
     </>
   ),
   arrowUpRight: <path d="M7 17 17 7M8.5 7H17v8.5" />,
+  arrowRight: <path d="M5 12h14M13 6l6 6-6 6" />,
+  cornerDownLeft: <path d="M20 5v6a3 3 0 0 1-3 3H5M9 10l-4 4 4 4" />,
+  check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2.5" />
+      <path d="M8 11V7.5a4 4 0 0 1 8 0V11" />
+    </>
+  ),
+  cloud: <path d="M7.5 18.5a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18.4 11a3.75 3.75 0 0 1-.9 7.5Z" />,
+  folder: <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z" />,
+  sparkles: <path d="M12 3.5 13.9 9l5.6 1.9-5.6 1.9L12 18.5l-1.9-5.7-5.6-1.9 5.6-1.9ZM19 3v3M20.5 4.5h-3M5 17v3M6.5 18.5h-3" />,
+  palette: (
+    <>
+      <path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.8 1.5-1.7-.4-1.2.3-2.3 1.6-2.3h1.4a4 4 0 0 0 4-4C20.5 7.5 16.7 3.5 12 3.5Z" />
+      <circle cx="7.5" cy="11" r="1" />
+      <circle cx="10" cy="7.5" r="1" />
+      <circle cx="14.5" cy="7.5" r="1" />
+    </>
+  ),
+  bolt: <path d="M13 3 5 13.5h6L10.5 21 19 10.5h-6Z" />,
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof paths;

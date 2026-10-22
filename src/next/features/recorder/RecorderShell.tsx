@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useState, type CSSProperties } from 'react';
 import { usePreview } from '../../app/context';
 import { DemoBadge } from '../../components/DemoBadge';
 import { Icon } from '../../components/Icon';
@@ -19,10 +19,12 @@ const statusCopy: Record<RecorderStatus, { label: string; text: string }> = {
 };
 
 const statusOrder = Object.keys(statusCopy) as RecorderStatus[];
+const step = (i: number) => ({ '--i': i }) as CSSProperties;
 
 /**
  * Floating Recorder shell (D-008, DS-C25) in its own activity layer (L2). UI only: it never asks for microphone permission
- * and never records. The status picker previews visual states for the design run and is labelled as such.
+ * and never records. The session panel stays mounted and morphs open/closed (M-07); it is inert while closed.
+ * The status picker previews visual states for the design run and is labelled as such.
  */
 export function RecorderShell() {
   const { dispatch } = usePreview();
@@ -52,8 +54,9 @@ export function RecorderShell() {
           Starten
         </button>
         <IconButton
-          icon={panelOpen ? 'chevronLeft' : 'chevronRight'}
+          icon="chevronDown"
           size="sm"
+          className="cb-recorder__toggle"
           label={panelOpen ? 'Session-Panel einklappen' : 'Session-Panel ausklappen'}
           aria-expanded={panelOpen}
           aria-controls={panelId}
@@ -64,22 +67,47 @@ export function RecorderShell() {
       <p id={reasonId} className="cb-visually-hidden">
         Aufnahme ist in der Vorschau nicht verfügbar. Es wird keine Mikrofonberechtigung angefragt.
       </p>
-      {panelOpen && (
-        <div id={panelId} className="cb-recorder__panel">
-          <p className="cb-recorder__text">{copy.text}</p>
-          <fieldset className="cb-recorder__states">
-            <legend>Zustandsvorschau (nur Darstellung)</legend>
-            {statusOrder.map((value) => (
-              <label key={value} className="cb-recorder__state">
-                <input type="radio" name="cb-recorder-status" value={value} checked={status === value} onChange={() => setStatus(value)} />
-                {statusCopy[value].label}
-              </label>
-            ))}
-          </fieldset>
-          <h3 className="cb-recorder__subtitle">Session-Timeline</h3>
-          <p className="cb-recorder__text">Noch keine Momente. Zeitgestempelte Screenshots und Dateien folgen mit der echten Aufnahme.</p>
+      <div className="cb-recorder__drawer">
+        <div id={panelId} inert={!panelOpen} aria-hidden={!panelOpen}>
+          <div className="cb-recorder__panel">
+            <p className="cb-recorder__text" style={step(0)}>
+              {copy.text}
+            </p>
+            <fieldset className="cb-recorder__states" style={step(1)}>
+              <legend>Zustandsvorschau (nur Darstellung)</legend>
+              {statusOrder.map((value) => (
+                <label key={value} className="cb-recorder__state">
+                  <input type="radio" name="cb-recorder-status" value={value} checked={status === value} onChange={() => setStatus(value)} />
+                  {statusCopy[value].label}
+                </label>
+              ))}
+            </fieldset>
+            <h3 className="cb-recorder__subtitle" style={step(2)}>
+              <Icon name="clock" size={14} />
+              Session-Timeline
+            </h3>
+            <div className="cb-recorder__timeline" aria-hidden="true" style={step(3)}>
+              <p className="cb-recorder__moment">
+                <time>00:00</time>
+                <i>
+                  <Icon name="image" size={14} />
+                </i>
+                <span />
+              </p>
+              <p className="cb-recorder__moment">
+                <time>--:--</time>
+                <i>
+                  <Icon name="file" size={14} />
+                </i>
+                <span />
+              </p>
+            </div>
+            <p className="cb-recorder__text" style={step(4)}>
+              Noch keine Momente. Zeitgestempelte Screenshots und Dateien folgen mit der echten Aufnahme.
+            </p>
+          </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }

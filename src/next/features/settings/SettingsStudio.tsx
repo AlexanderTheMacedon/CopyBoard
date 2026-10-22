@@ -1,22 +1,25 @@
-import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { usePreview } from '../../app/context';
 import { densityPreference, sidebarPreference, themePreference, viewPreference, type PreferenceDefinition, type Preferences } from '../../app/preferences';
 import type { SettingsSection } from '../../app/state';
 import { DemoBadge } from '../../components/DemoBadge';
 import { Dialog } from '../../components/Dialog';
+import { Icon, type IconName } from '../../components/Icon';
 import { IconButton } from '../../components/IconButton';
 import { SegmentedControl } from '../../components/SegmentedControl';
 
-const sections: readonly { id: SettingsSection; label: string }[] = [
-  { id: 'general', label: 'Allgemein & Darstellung' },
-  { id: 'data', label: 'Daten & Synchronisierung' },
-  { id: 'security', label: 'Sicherheit & Datenschutz' },
+const sections: readonly { id: SettingsSection; label: string; icon: IconName }[] = [
+  { id: 'general', label: 'Allgemein & Darstellung', icon: 'palette' },
+  { id: 'data', label: 'Daten & Synchronisierung', icon: 'cloud' },
+  { id: 'security', label: 'Sicherheit & Datenschutz', icon: 'shield' },
 ];
 
-function PreferenceRow<K extends keyof Preferences>({ definition }: { definition: PreferenceDefinition<K> }) {
+const step = (i: number) => ({ '--i': i }) as CSSProperties;
+
+function PreferenceRow<K extends keyof Preferences>({ definition, index }: { definition: PreferenceDefinition<K>; index: number }) {
   const { state, dispatch } = usePreview();
   return (
-    <div className="cb-settings__row">
+    <div className="cb-settings__row" style={step(index)}>
       <p className="cb-settings__label">{definition.label}</p>
       <SegmentedControl
         label={definition.label}
@@ -30,9 +33,12 @@ function PreferenceRow<K extends keyof Preferences>({ definition }: { definition
 }
 
 /** Placeholder row for a setting whose real implementation needs a later, separately approved run. */
-function PendingRow({ label, children }: { label: string; children: ReactNode }) {
+function PendingRow({ label, index, children }: { label: string; index: number; children: ReactNode }) {
   return (
-    <div className="cb-settings__row cb-settings__row--pending">
+    <div className="cb-settings__row cb-settings__row--pending" style={step(index)}>
+      <span className="cb-settings__lock" aria-hidden="true">
+        <Icon name="lock" size={16} />
+      </span>
       <p className="cb-settings__label">
         {label} <DemoBadge>Noch nicht verfügbar</DemoBadge>
       </p>
@@ -46,28 +52,45 @@ function SectionContent({ section }: { section: SettingsSection }) {
     case 'general':
       return (
         <>
-          <PreferenceRow definition={themePreference} />
-          <PreferenceRow definition={sidebarPreference} />
-          <PreferenceRow definition={densityPreference} />
-          <PreferenceRow definition={viewPreference} />
-          <PendingRow label="Sprache">Deutsch. Weitere Sprachen folgen.</PendingRow>
-          <p className="cb-settings__note">Änderungen gelten nur für diese Sitzung und werden nicht gespeichert.</p>
+          <PreferenceRow definition={themePreference} index={0} />
+          <PreferenceRow definition={sidebarPreference} index={1} />
+          <PreferenceRow definition={densityPreference} index={2} />
+          <PreferenceRow definition={viewPreference} index={3} />
+          <PendingRow label="Sprache" index={4}>
+            Deutsch. Weitere Sprachen folgen.
+          </PendingRow>
+          <p className="cb-settings__note" style={step(5)}>
+            <Icon name="info" size={16} />
+            Änderungen gelten nur für diese Sitzung und werden nicht gespeichert.
+          </p>
         </>
       );
     case 'data':
       return (
         <>
-          <PendingRow label="Speicherort">Die Vorschau zeigt synthetische Beispieldaten und speichert nichts.</PendingRow>
-          <PendingRow label="Konto & Cloud">Keine Anmeldung und keine Synchronisierung in der Vorschau.</PendingRow>
-          <PendingRow label="Export & Backup">Folgt mit dem Datenadapter eines späteren Runs.</PendingRow>
+          <PendingRow label="Speicherort" index={0}>
+            Die Vorschau zeigt synthetische Beispieldaten und speichert nichts.
+          </PendingRow>
+          <PendingRow label="Konto & Cloud" index={1}>
+            Keine Anmeldung und keine Synchronisierung in der Vorschau.
+          </PendingRow>
+          <PendingRow label="Export & Backup" index={2}>
+            Folgt mit dem Datenadapter eines späteren Runs.
+          </PendingRow>
         </>
       );
     case 'security':
       return (
         <>
-          <PendingRow label="Mikrofon">Es wird keine Berechtigung angefragt; der Recorder ist eine reine Oberfläche.</PendingRow>
-          <PendingRow label="PIN-Schutz">Gesperrte Inhalte und PIN-Entsperrung folgen später.</PendingRow>
-          <PendingRow label="Datenschutz">Keine Netzwerkverbindungen, keine Zwischenablage, keine Dateien.</PendingRow>
+          <PendingRow label="Mikrofon" index={0}>
+            Es wird keine Berechtigung angefragt; der Recorder ist eine reine Oberfläche.
+          </PendingRow>
+          <PendingRow label="PIN-Schutz" index={1}>
+            Gesperrte Inhalte und PIN-Entsperrung folgen später.
+          </PendingRow>
+          <PendingRow label="Datenschutz" index={2}>
+            Keine Netzwerkverbindungen, keine Zwischenablage, keine Dateien.
+          </PendingRow>
         </>
       );
   }
@@ -115,11 +138,12 @@ export function SettingsStudio() {
                 className="cb-settings__tab"
                 onClick={() => dispatch({ type: 'setSettingsSection', section: section.id })}
               >
+                <Icon name={section.icon} size={18} />
                 {section.label}
               </button>
             ))}
           </div>
-          <div role="tabpanel" id="cb-settings-panel" aria-labelledby={`cb-settings-tab-${state.settingsSection}`} className="cb-settings__panel">
+          <div key={state.settingsSection} role="tabpanel" id="cb-settings-panel" aria-labelledby={`cb-settings-tab-${state.settingsSection}`} className="cb-settings__panel">
             <SectionContent section={state.settingsSection} />
           </div>
         </div>

@@ -1,24 +1,27 @@
 /*
- * CopyBoard preview design tokens.
- * Values are the [PROPOSAL] candidates from Blueprint 04 (§1–§4, §8) and Blueprint 03 (§4.2); they are NOT final tokens.
- * Layers: primitives (--cb-p-*) → semantic (--cb-*) → component (--cb-card-*, --cb-dock-* …). Components only use semantic and
- * component tokens. The design run recalibrates values here without touching component code.
+ * CopyBoard 2 design tokens — Run C (Design WOW v1).
+ * Calibrated from the Blueprint 04 [PROPOSAL] candidates against rendered screens in light and dark. Still not final
+ * product tokens (DS-TOKEN-01..03 stay open), but one consistent system:
+ *   primitives (--cb-p-*) → semantic (--cb-*) → component (--cb-card-*, --cb-dock-* …).
+ * Components only use semantic and component tokens. Reduced motion collapses every duration to 0 (Blueprint 03 §4.5).
  */
 
 .cb-app {
-  /* --- Primitives: brand study D-013 --- */
-  --cb-p-mist: #f5f3fa;
-  --cb-p-lilac: #c4b5fd;
-  --cb-p-orchid: #dbb6f5;
-  --cb-p-periwinkle: #aeb8fa;
-  --cb-p-iris: #7064c8;
+  /* --- Primitives: Mist & Lavender brand study (D-013) --- */
+  --cb-p-mist: #f6f4fb;
+  --cb-p-lilac: #c9b8ff;
+  --cb-p-orchid: #e4bdf6;
+  --cb-p-periwinkle: #b3bdff;
+  --cb-p-iris: #6e5fcb;
+  --cb-p-iris-deep: #4f41a8;
+  --cb-p-graphite: #27223a;
 
   /* --- Space identity colours (D-018/D-031): ambient tint and small markers only, never status --- */
-  --cb-space-lavender: #bda7f4;
-  --cb-space-sky: #a7c9eb;
-  --cb-space-sage: #b8d9bd;
-  --cb-space-peach: #f2c7a5;
-  --cb-space-rose: #f0b4c8;
+  --cb-space-lavender: #b9a3f3;
+  --cb-space-sky: #9fc5ec;
+  --cb-space-sage: #b1d6b8;
+  --cb-space-peach: #f3c6a3;
+  --cb-space-rose: #f0b1c6;
 
   /* --- Spacing (Blueprint 04 §2.1) --- */
   --cb-space-1: 4px;
@@ -31,166 +34,215 @@
   --cb-space-10: 40px;
   --cb-space-12: 48px;
 
-  /* --- Radius (D-014, Blueprint 04 §2.2). The boost compensates the optically smaller squircle corner. --- */
+  /* --- Radius hierarchy (D-014): controls < cards < panels < sheets. Boost compensates the optically smaller squircle. --- */
   --cb-squircle-boost: 1;
-  --cb-radius-control-sm: calc(8px * var(--cb-squircle-boost));
+  --cb-radius-control-sm: calc(9px * var(--cb-squircle-boost));
   --cb-radius-control: calc(12px * var(--cb-squircle-boost));
-  --cb-radius-card: calc(18px * var(--cb-squircle-boost));
-  --cb-radius-panel: calc(22px * var(--cb-squircle-boost));
-  --cb-radius-sheet: calc(28px * var(--cb-squircle-boost));
-  --cb-radius-chip: 999px;
+  --cb-radius-card: calc(20px * var(--cb-squircle-boost));
+  --cb-radius-panel: calc(24px * var(--cb-squircle-boost));
+  --cb-radius-sheet: calc(30px * var(--cb-squircle-boost));
 
-  /* --- Typography (D-016, Blueprint 04 §3.1) --- */
-  --cb-font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  --cb-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --cb-text-display: 600 clamp(28px, 3.2vw, 36px) / 1.17 var(--cb-font-ui);
-  --cb-text-section: 600 24px / 31px var(--cb-font-ui);
-  --cb-text-panel: 600 18px / 25px var(--cb-font-ui);
+  /* --- Typography: Soft Editorial (D-016). System stack until the font licence gate; expressive display sizes. --- */
+  --cb-font-ui: system-ui, -apple-system, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --cb-font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --cb-text-display: 700 clamp(34px, 3.7vw, 46px) / 1.06 var(--cb-font-ui);
+  --cb-text-section: 650 24px / 30px var(--cb-font-ui);
+  --cb-text-panel: 650 18px / 24px var(--cb-font-ui);
   --cb-text-body: 400 15px / 23px var(--cb-font-ui);
   --cb-text-ui: 500 14px / 20px var(--cb-font-ui);
-  --cb-text-meta: 400 13px / 19px var(--cb-font-ui);
-  --cb-text-caption: 500 12px / 17px var(--cb-font-ui);
-  --cb-text-mono: 400 13px / 1.55 var(--cb-font-mono);
+  --cb-text-meta: 400 13px / 18px var(--cb-font-ui);
+  --cb-text-caption: 500 12px / 16px var(--cb-font-ui);
+  --cb-text-mono: 400 13px / 1.6 var(--cb-font-mono);
+  --cb-tracking-display: -0.028em;
+  --cb-tracking-heading: -0.016em;
 
-  /* --- Motion (D-017, Blueprint 03 §4.2 / 04 §8.1). Reduced motion collapses durations below. --- */
+  /* --- Motion grammar (D-017 · 80 % expressive / 20 % soft choreography) --- */
   --cb-dur-instant: 80ms;
-  --cb-dur-micro: 140ms;
-  --cb-dur-swift: 200ms;
-  --cb-dur-standard: 280ms;
-  --cb-dur-expressive: 420ms;
-  --cb-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --cb-ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
-  --cb-hover-lift: -2px;
-  --cb-settle-scale: 1.02;
+  --cb-dur-micro: 150ms;
+  --cb-dur-swift: 220ms;
+  --cb-dur-standard: 300ms;
+  --cb-dur-expressive: 440ms;
+  --cb-dur-ambient: 32s;
+  --cb-stagger: 28ms;
+  --cb-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --cb-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --cb-ease-spring: cubic-bezier(0.3, 1.35, 0.5, 1);
+  --cb-ease-spring-soft: cubic-bezier(0.34, 1.12, 0.64, 1);
+  --cb-hover-lift: -3px;
+  --cb-settle-scale: 1.018;
+  --cb-enter-shift: 12px;
 
   /* --- Layout (Blueprint 04 §4.2 candidates) --- */
-  --cb-rail-w: 64px;
-  --cb-sidebar-w: 248px;
-  --cb-inspector-w: 380px;
-  --cb-toolbar-h: 56px;
-  --cb-dock-h: 64px;
+  --cb-rail-w: 68px;
+  --cb-sidebar-w: 260px;
+  --cb-inspector-w: 400px;
+  --cb-rail-context-w: 300px;
+  --cb-toolbar-h: 60px;
+  --cb-dock-h: 68px;
+  --cb-ambient-h: 560px;
   --cb-safe-bottom: env(safe-area-inset-bottom, 0px);
-  --cb-content-max: 1280px;
-  --cb-gutter: clamp(16px, 3vw, 40px);
+  --cb-safe-top: env(safe-area-inset-top, 0px);
+  --cb-content-max: 1320px;
+  --cb-gutter: clamp(16px, 3.2vw, 44px);
 
-  /* --- Focus (Blueprint 04 §5.1: 2 px, strong contrast, offset) --- */
+  /* --- Focus (Blueprint 04 §5.1) --- */
   --cb-focus-width: 2px;
   --cb-focus-offset: 2px;
 }
 
-/* --- Semantic colours: light (Blueprint 04 §1.2) --- */
+/* --- Semantic colours: light (Blueprint 04 §1.2, calibrated) --- */
 .cb-app,
 .cb-app[data-theme='light'] {
   color-scheme: light;
-  --cb-surface-canvas: #f8f7fb;
+  --cb-surface-canvas: #f7f5fb;
   --cb-surface-base: #ffffff;
-  --cb-surface-subtle: #f4f1f8;
-  --cb-surface-hover: #f1edf8;
-  --cb-surface-selected: #ebe4fc;
-  --cb-text-primary: #292536;
-  --cb-text-secondary: #625c70;
-  --cb-text-tertiary: #716b7f;
-  --cb-border-subtle: #e4deec;
-  --cb-border-strong: #cfc6dd;
-  --cb-accent: #7064c8;
-  --cb-accent-hover: #5b4eb8;
+  --cb-surface-subtle: #f3f0f9;
+  --cb-surface-hover: #eee9f7;
+  --cb-surface-selected: #e9e2fa;
+  --cb-surface-inverse: #241f36;
+  --cb-text-primary: #27223a;
+  --cb-text-secondary: #5f5873;
+  --cb-text-tertiary: #7c7590;
+  --cb-text-on-inverse: #e9e4f6;
+  --cb-border-subtle: #e6e1ef;
+  --cb-border-strong: #d2cbe0;
+  --cb-accent: #6e5fcb;
+  --cb-accent-hover: #5a4bb9;
+  --cb-accent-soft: #ece7fb;
   --cb-on-accent: #ffffff;
-  --cb-focus-ring: #5b4eb8;
-  --cb-status-success: #216e52;
-  --cb-status-warning: #875a18;
+  --cb-focus-ring: #5a4bb9;
+  --cb-status-success: #1f6e52;
+  --cb-status-warning: #8a5a14;
   --cb-status-error: #a8334d;
   --cb-status-info: #3e5fab;
-  /* Material tiers (D-015, Blueprint 04 §2.3): opaque majority, few frosted accents */
-  --cb-frosted-popover: rgb(255 255 255 / 0.84);
-  --cb-frosted-floating: rgb(255 255 255 / 0.82);
-  --cb-frosted-sticky: rgb(248 247 251 / 0.92);
-  --cb-blur-popover: 22px;
-  --cb-blur-sticky: 14px;
-  --cb-backdrop: rgb(41 37 54 / 0.28);
-  --cb-shadow-1: 0 1px 2px rgb(41 37 54 / 0.06), 0 2px 8px rgb(41 37 54 / 0.04);
-  --cb-shadow-2: 0 4px 16px rgb(41 37 54 / 0.08), 0 1px 3px rgb(41 37 54 / 0.06);
-  --cb-shadow-3: 0 12px 32px rgb(41 37 54 / 0.12), 0 2px 6px rgb(41 37 54 / 0.06);
-  --cb-shadow-4: 0 24px 64px rgb(41 37 54 / 0.18), 0 4px 12px rgb(41 37 54 / 0.08);
-  --cb-ambient-opacity: 0.75;
+  --cb-status-warning-soft: #fbf1dc;
+  --cb-status-error-soft: #fbe3e8;
+  /* Ambient light fields (D-019/D-031) */
+  --cb-orb-lilac: #cdbcff;
+  --cb-orb-orchid: #ebc2f7;
+  --cb-orb-periwinkle: #b6c0ff;
+  --cb-orb-iris: #a394f4;
+  --cb-ambient-opacity: 0.92;
+  --cb-ambient-wash: color-mix(in srgb, var(--cb-p-lilac) 34%, transparent);
+  /* Material tiers (D-015 · ~70 % opaque soft elevation / ~30 % frosted accents) */
+  --cb-frosted-popover: rgb(255 255 255 / 0.8);
+  --cb-frosted-floating: rgb(255 255 255 / 0.76);
+  --cb-frosted-sticky: rgb(247 245 251 / 0.84);
+  --cb-blur-popover: 24px;
+  --cb-blur-sticky: 16px;
+  --cb-backdrop: rgb(30 24 52 / 0.34);
+  --cb-shadow-color: 50 40 96;
+  --cb-shadow-1: 0 1px 2px rgb(var(--cb-shadow-color) / 0.05), 0 2px 10px rgb(var(--cb-shadow-color) / 0.05);
+  --cb-shadow-2: 0 2px 4px rgb(var(--cb-shadow-color) / 0.05), 0 10px 28px -6px rgb(var(--cb-shadow-color) / 0.14);
+  --cb-shadow-3: 0 4px 10px rgb(var(--cb-shadow-color) / 0.06), 0 22px 48px -12px rgb(var(--cb-shadow-color) / 0.22);
+  --cb-shadow-4: 0 10px 24px rgb(var(--cb-shadow-color) / 0.1), 0 40px 90px -20px rgb(var(--cb-shadow-color) / 0.32);
+  --cb-code-bg: #2a2540;
+  --cb-code-text: #d9d2f2;
+  --cb-code-muted: #8c82b4;
 }
 
-/* --- Semantic colours: dark, tuned independently (Blueprint 04 §1.3, D-031) --- */
+/* --- Semantic colours: dark — own graphite/aubergine studio with controlled violet light (D-031) --- */
 .cb-app[data-theme='dark'] {
   color-scheme: dark;
-  --cb-surface-canvas: #161520;
-  --cb-surface-base: #23212e;
-  --cb-surface-subtle: #2d2a3a;
-  --cb-surface-hover: #373247;
-  --cb-surface-selected: #403558;
-  --cb-text-primary: #f5f2fa;
-  --cb-text-secondary: #c8c1d3;
-  --cb-text-tertiary: #aaa1bb;
-  --cb-border-subtle: #484257;
-  --cb-border-strong: #5d566f;
-  --cb-accent: #b9a8ff;
-  --cb-accent-hover: #cbbdff;
-  --cb-on-accent: #211b35;
-  --cb-focus-ring: #cbbdff;
+  --cb-surface-canvas: #15121f;
+  --cb-surface-base: #1f1b2c;
+  --cb-surface-subtle: #272336;
+  --cb-surface-hover: #302b42;
+  --cb-surface-selected: #3a3157;
+  --cb-surface-inverse: #f3effa;
+  --cb-text-primary: #f3effa;
+  --cb-text-secondary: #c3bbd3;
+  --cb-text-tertiary: #9790ab;
+  --cb-text-on-inverse: #27223a;
+  --cb-border-subtle: #332e45;
+  --cb-border-strong: #4a4360;
+  --cb-accent: #b6a5ff;
+  --cb-accent-hover: #c9bbff;
+  --cb-accent-soft: #312a4d;
+  --cb-on-accent: #1b1630;
+  --cb-focus-ring: #c9bbff;
   --cb-status-success: #83dbb5;
-  --cb-status-warning: #f8cb79;
+  --cb-status-warning: #f6c979;
   --cb-status-error: #ff9eb0;
   --cb-status-info: #a0bfff;
-  --cb-frosted-popover: rgb(35 33 46 / 0.84);
-  --cb-frosted-floating: rgb(35 33 46 / 0.86);
-  --cb-frosted-sticky: rgb(22 21 32 / 0.9);
-  --cb-backdrop: rgb(8 7 14 / 0.55);
-  --cb-shadow-1: 0 1px 2px rgb(0 0 0 / 0.3);
-  --cb-shadow-2: 0 4px 16px rgb(0 0 0 / 0.35);
-  --cb-shadow-3: 0 12px 32px rgb(0 0 0 / 0.45);
-  --cb-shadow-4: 0 24px 64px rgb(0 0 0 / 0.55);
-  --cb-ambient-opacity: 0.32;
+  --cb-status-warning-soft: #3a3020;
+  --cb-status-error-soft: #45222c;
+  --cb-orb-lilac: #7a63e6;
+  --cb-orb-orchid: #a86fd9;
+  --cb-orb-periwinkle: #5e6fe0;
+  --cb-orb-iris: #8b78f0;
+  --cb-ambient-opacity: 0.6;
+  --cb-ambient-wash: color-mix(in srgb, #5e4bc8 22%, transparent);
+  --cb-frosted-popover: rgb(31 27 44 / 0.82);
+  --cb-frosted-floating: rgb(31 27 44 / 0.8);
+  --cb-frosted-sticky: rgb(21 18 31 / 0.82);
+  --cb-backdrop: rgb(6 4 14 / 0.6);
+  --cb-shadow-color: 0 0 0;
+  --cb-shadow-1: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 10px rgb(0 0 0 / 0.2);
+  --cb-shadow-2: 0 2px 4px rgb(0 0 0 / 0.3), 0 12px 30px -6px rgb(0 0 0 / 0.45);
+  --cb-shadow-3: 0 4px 10px rgb(0 0 0 / 0.3), 0 24px 50px -12px rgb(0 0 0 / 0.6);
+  --cb-shadow-4: 0 10px 24px rgb(0 0 0 / 0.35), 0 40px 90px -20px rgb(0 0 0 / 0.7);
+  --cb-code-bg: #16131f;
+  --cb-code-text: #ddd6f3;
+  --cb-code-muted: #7e74a6;
 }
 
 /* --- Density (D-032, Blueprint 04 §4.1): discrete steps, same grid system --- */
 .cb-grid,
 .cb-grid[data-density='standard'] {
-  --cb-card-min: 220px;
-  --cb-card-gap: 14px;
+  --cb-card-min: 224px;
+  --cb-card-gap: 16px;
   --cb-card-inset: 12px;
-  --cb-preview-h: 124px;
-  --cb-row-min-h: 52px;
+  --cb-preview-h: 128px;
+  --cb-row-min-h: 56px;
 }
 .cb-grid[data-density='comfort'] {
-  --cb-card-min: 272px;
+  --cb-card-min: 280px;
   --cb-card-gap: 22px;
   --cb-card-inset: 16px;
-  --cb-preview-h: 184px;
-  --cb-row-min-h: 64px;
+  --cb-preview-h: 188px;
+  --cb-row-min-h: 68px;
 }
 .cb-grid[data-density='compact'] {
-  --cb-card-min: 176px;
+  --cb-card-min: 180px;
   --cb-card-gap: 10px;
   --cb-card-inset: 10px;
-  --cb-preview-h: 84px;
-  --cb-row-min-h: 44px;
+  --cb-preview-h: 88px;
+  --cb-row-min-h: 46px;
 }
 
 /* --- Real squircle silhouettes where supported (D-014); border-radius stays the fallback --- */
 @supports (corner-shape: squircle) {
   .cb-app {
-    --cb-squircle-boost: 1.6;
+    --cb-squircle-boost: 1.35;
   }
   .cb-squircle,
   .cb-tile__open,
+  .cb-tile__preview,
   .cb-capture,
+  .cb-capture__lead,
   .cb-inspector__image,
+  .cb-inspector__content,
   .cb-dialog__panel,
   .cb-popover__panel,
   .cb-recorder,
   .cb-dock,
   .cb-button,
   .cb-icon-button,
-  .cb-segmented {
+  .cb-segmented,
+  .cb-nav__swatch,
+  .cb-brand-mark,
+  .cb-empty__art,
+  .cb-palette__icon,
+  .cb-rail__slot,
+  .cb-notice,
+  .cb-hero__fact,
+  .cb-search-trigger {
     corner-shape: squircle;
   }
 }
 
-/* --- Reduced motion (Blueprint 03 §4.5): instant state changes, no transforms or drift --- */
+/* --- Reduced motion (Blueprint 03 §4.5): instant state changes, no transforms, no drift --- */
 @media (prefers-reduced-motion: reduce) {
   .cb-app {
     --cb-dur-instant: 0ms;
@@ -198,8 +250,10 @@
     --cb-dur-swift: 0ms;
     --cb-dur-standard: 0ms;
     --cb-dur-expressive: 0ms;
+    --cb-stagger: 0ms;
     --cb-hover-lift: 0px;
     --cb-settle-scale: 1;
+    --cb-enter-shift: 0px;
   }
 }
 

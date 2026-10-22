@@ -2,9 +2,21 @@ import { usePreview } from '../../app/context';
 import { Icon, type IconName } from '../../components/Icon';
 import { focusCapture } from '../capture/SmartCapture';
 
-function DockButton({ icon, label, onClick, pressed }: { icon: IconName; label: string; onClick: () => void; pressed?: boolean }) {
+function DockButton({
+  icon,
+  label,
+  onClick,
+  pressed,
+  primary,
+}: {
+  icon: IconName;
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+  primary?: boolean;
+}) {
   return (
-    <button type="button" className="cb-dock__button" onClick={onClick} aria-pressed={pressed}>
+    <button type="button" className={`cb-dock__button${primary ? ' cb-dock__button--primary' : ''}`} onClick={onClick} aria-pressed={pressed}>
       <Icon name={icon} size={22} />
       <span className="cb-dock__label">{label}</span>
     </button>
@@ -31,7 +43,7 @@ export function MobileDock() {
     <nav className="cb-dock" aria-label="Schnellzugriff">
       <DockButton icon="spaces" label="Spaces" onClick={() => dispatch({ type: 'openOverlay', overlay: 'spaces-drawer' })} />
       <DockButton icon="search" label="Suche" onClick={() => dispatch({ type: 'openOverlay', overlay: 'search' })} />
-      <DockButton icon="plus" label="Erfassen" onClick={capture} />
+      <DockButton icon="plus" label="Erfassen" primary onClick={capture} />
       <DockButton
         icon="mic"
         label="Aufnahme"

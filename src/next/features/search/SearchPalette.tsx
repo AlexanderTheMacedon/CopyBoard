@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { usePreview } from '../../app/context';
 import { Dialog } from '../../components/Dialog';
 import { Icon } from '../../components/Icon';
@@ -61,12 +61,15 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
               role="option"
               aria-selected={selected}
               className="cb-palette__option"
+              style={{ '--i': Math.min(index, 10) } as CSSProperties}
               onMouseMove={() => !selected && setActive(index)}
               onClick={() => activate(entry)}
             >
               {entry.kind === 'item' ? (
                 <>
-                  <Icon name={kindIcon[entry.item.kind]} size={18} />
+                  <span className="cb-palette__icon" data-kind={entry.item.kind} aria-hidden="true">
+                    <Icon name={kindIcon[entry.item.kind]} size={17} />
+                  </span>
                   <span className="cb-palette__option-label">{entry.item.title}</span>
                   <span className="cb-palette__option-meta">
                     {kindLabel[entry.item.kind]} · {library.getSpace(entry.item.spaceId)?.name}
@@ -74,11 +77,16 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                 </>
               ) : (
                 <>
-                  <Icon name={entry.command.icon} size={18} />
+                  <span className="cb-palette__icon" data-kind="command" aria-hidden="true">
+                    <Icon name={entry.command.icon} size={17} />
+                  </span>
                   <span className="cb-palette__option-label">{entry.command.label}</span>
                   <span className="cb-palette__option-meta">Befehl</span>
                 </>
               )}
+              <span className="cb-palette__option-enter" aria-hidden="true">
+                <Icon name="cornerDownLeft" size={14} />
+              </span>
             </div>
           );
         })}
@@ -110,7 +118,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
           }}
           onKeyDown={onKeyDown}
         />
-        <kbd className="cb-palette__esc">Esc</kbd>
+        <kbd className="cb-kbd">Esc</kbd>
       </div>
       <div id="cb-search-results" role="listbox" aria-label="Suchergebnisse" className="cb-palette__results">
         {renderGroup(query.trim() ? 'Inhalte' : 'Zuletzt', itemEntries, 0)}
@@ -121,12 +129,21 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
           Keine Treffer für „{query}“.
         </p>
       )}
-      <p className="cb-palette__footer">Lokale Suche in synthetischen Beispieldaten · ↑↓ auswählen · Enter öffnen</p>
+      <p className="cb-palette__footer">
+        <span>
+          <kbd className="cb-kbd">↑</kbd>
+          <kbd className="cb-kbd">↓</kbd> auswählen
+        </span>
+        <span>
+          <kbd className="cb-kbd">↵</kbd> öffnen
+        </span>
+        <span className="cb-palette__scope">Lokale Suche in synthetischen Beispieldaten</span>
+      </p>
     </>
   );
 }
 
-/** Smart Search palette (D-021, DS-C29): modal layer L5, full screen on phones via CSS. */
+/** Smart Search palette (D-021, DS-C29, M-11): modal layer L5, full screen on phones via CSS. */
 export function SearchPalette() {
   const { state, dispatch } = usePreview();
   const close = () => dispatch({ type: 'closeOverlay' });

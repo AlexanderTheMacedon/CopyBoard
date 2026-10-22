@@ -2,27 +2,44 @@ import type { CSSProperties } from 'react';
 import { usePreview } from '../../app/context';
 import { Icon } from '../../components/Icon';
 import { IconButton } from '../../components/IconButton';
+import { Popover } from '../../components/Popover';
 import type { Item } from '../../domain/types';
-import { primaryQuickAction } from '../items/item-actions';
+import { itemActions, primaryQuickAction } from '../items/item-actions';
 import { formatDate, kindIcon, kindLabel, spaceColorVar } from '../items/item-meta';
 import { useRunItemAction } from '../items/useItemActions';
 import { ItemPreview } from './ItemPreview';
 
 export const tileOpenButtonId = (itemId: string) => `cb-tile-open-${itemId}`;
 
+/** Stagger cap: only the first dozen cards animate with a delay (Blueprint 03 §4.4 rule 5). */
+const STAGGER_CAP = 11;
+
 /**
  * One item in the Smart Grid or List (DS-C09/C10): identical action grammar in both layouts, only CSS differs.
- * The main button opens the Inspector; the quick action is a sibling, so there are no nested interactive elements.
+ * The main button opens the Inspector; quick actions (Copy + "…" menu from the shared action registry, D-006) are siblings,
+ * so there are no nested interactive elements.
  */
-export function ItemTile({ item, showSpace }: { item: Item; showSpace: boolean }) {
+export function ItemTile({ item, index, showSpace }: { item: Item; index: number; showSpace: boolean }) {
   const { state, dispatch, library } = usePreview();
   const runAction = useRunItemAction();
   const selected = state.inspectedItemId === item.id;
   const quick = primaryQuickAction(item, state.location);
+  const actions = itemActions(item, state.location);
   const space = library.getSpace(item.spaceId);
 
   return (
-    <li className="cb-tile" data-kind={item.kind} data-selected={selected || undefined} data-item-id={item.id}>
+    <li
+      className="cb-tile"
+      data-kind={item.kind}
+      data-selected={selected || undefined}
+      data-item-id={item.id}
+      style={{ '--i': Math.min(index, STAGGER_CAP) } as CSSProperties}
+    >
+      {selected && (
+        <span className="cb-tile__marker" aria-hidden="true">
+          <Icon name="panelRight" size={14} />
+        </span>
+      )}
       <button
         id={tileOpenButtonId(item.id)}
         type="button"
@@ -54,8 +71,8 @@ export function ItemTile({ item, showSpace }: { item: Item; showSpace: boolean }
           </span>
         </span>
       </button>
-      {quick && (
-        <div className="cb-tile__actions">
+      <div className="cb-tile__actions">
+        {quick && (
           <IconButton
             icon={quick.icon}
             size="sm"
@@ -63,8 +80,35 @@ export function ItemTile({ item, showSpace }: { item: Item; showSpace: boolean }
             label={`${item.title}: ${quick.label} (Demo)`}
             onClick={() => runAction(quick, item)}
           />
-        </div>
-      )}
+        )}
+        <Popover
+          label={`${item.title}: Weitere Aktionen`}
+          icon="more"
+          iconSize={16}
+          triggerClassName="cb-icon-button cb-icon-button--subtle cb-icon-button--sm"
+        >
+          {(close) => (
+            <div className="cb-menu" role="menu" aria-label="Aktionen">
+              {actions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  role="menuitem"
+                  className="cb-menu__item"
+                  onClick={() => {
+                    close();
+                    runAction(action, item);
+                  }}
+                >
+                  <Icon name={action.icon} size={16} />
+                  <span>{action.label}</span>
+                  {action.availability === 'demo' && <span className="cb-demo-badge">Demo</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </Popover>
+      </div>
     </li>
   );
 }

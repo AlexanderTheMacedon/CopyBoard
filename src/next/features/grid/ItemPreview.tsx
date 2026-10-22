@@ -1,8 +1,10 @@
 import type { CSSProperties } from 'react';
+import { Icon } from '../../components/Icon';
 import type { AudioItem, ImageItem, Item } from '../../domain/types';
-import { excerpt, fileExtension, formatDuration, formatSize } from '../items/item-meta';
+import { excerpt, fileExtension, firstHeading, formatDuration, formatSize, kindIcon } from '../items/item-meta';
 
-// Type-specific semantic preview (D-005). Purely presentational; card vs. inspector scale is decided by CSS.
+// Type-specific semantic preview (D-005, DS-C11). Purely presentational; card vs. inspector scale is decided by CSS.
+// In list mode CSS hides the rich preview and shows the kind glyph instead (same markup, no second component).
 
 export function ImageSwatch({ item, className = 'cb-preview cb-preview--image' }: { item: ImageItem; className?: string }) {
   const [a, b, c] = item.palette;
@@ -22,34 +24,69 @@ export function Waveform({ item, className = 'cb-waveform' }: { item: AudioItem;
   );
 }
 
+const Glyph = ({ item }: { item: Item }) => (
+  <span className="cb-preview__glyph" aria-hidden="true">
+    <Icon name={kindIcon[item.kind]} size={20} />
+  </span>
+);
+
 export function ItemPreview({ item }: { item: Item }) {
   switch (item.kind) {
     case 'text':
-    case 'markdown':
       return (
-        <div className={`cb-preview cb-preview--${item.kind}`}>
-          <p>{excerpt(item)}</p>
+        <div className="cb-preview cb-preview--text">
+          <p className="cb-preview__text">{excerpt(item)}</p>
+          <Glyph item={item} />
         </div>
       );
+    case 'markdown': {
+      const heading = firstHeading(item.body);
+      return (
+        <div className="cb-preview cb-preview--markdown">
+          <p className="cb-preview__text">
+            {heading && <strong>{heading}</strong>}
+            {excerpt(item, 180, true)}
+          </p>
+          <Glyph item={item} />
+        </div>
+      );
+    }
     case 'code':
       return (
         <div className="cb-preview cb-preview--code">
-          <pre>
-            <code>{item.body.split('\n').slice(0, 7).join('\n')}</code>
+          <span className="cb-code__chrome" aria-hidden="true">
+            <i className="cb-code__dot" />
+            <i className="cb-code__dot" />
+            <i className="cb-code__dot" />
+            <span className="cb-code__lang">{item.language}</span>
+          </span>
+          <pre className="cb-preview__code">
+            <code>
+              {item.body.split('\n').slice(0, 8).map((line, i) => (
+                <span key={i} className="cb-code__line">
+                  {line}
+                </span>
+              ))}
+            </code>
           </pre>
+          <Glyph item={item} />
         </div>
       );
     case 'image':
       return (
         <div className="cb-preview cb-preview--image-frame">
           <ImageSwatch item={item} />
+          <span className="cb-preview__chip" aria-hidden="true">
+            {item.width} × {item.height}
+          </span>
         </div>
       );
     case 'file':
       return (
         <div className="cb-preview cb-preview--file">
-          <span className="cb-file-badge">{fileExtension(item.fileName)}</span>
+          <span className="cb-file-sheet">{fileExtension(item.fileName)}</span>
           <span className="cb-preview__caption">{formatSize(item.sizeBytes)}</span>
+          <Glyph item={item} />
         </div>
       );
     case 'audio':
@@ -57,6 +94,9 @@ export function ItemPreview({ item }: { item: Item }) {
         <div className="cb-preview cb-preview--audio">
           <Waveform item={item} />
           <span className="cb-preview__caption">{formatDuration(item.durationSec)}</span>
+          <span className="cb-preview__play" aria-hidden="true">
+            <Icon name="play" size={14} />
+          </span>
         </div>
       );
   }

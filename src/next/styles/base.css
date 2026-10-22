@@ -1,4 +1,4 @@
-/* Base layer: reset, typography defaults, focus and accessibility utilities. */
+/* Base layer: reset, typography defaults, focus and accessibility utilities, shared keyframes. */
 
 *,
 *::before,
@@ -13,14 +13,15 @@ body {
 }
 
 body {
-  background: #f8f7fb;
+  background: #f7f5fb;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 @media (prefers-color-scheme: dark) {
   body {
-    background: #161520;
+    background: #15121f;
   }
 }
 
@@ -35,11 +36,23 @@ body {
   background: var(--cb-surface-canvas);
   color: var(--cb-text-primary);
   font: var(--cb-text-body);
-  transition: background-color var(--cb-dur-standard) var(--cb-ease-out), color var(--cb-dur-standard) var(--cb-ease-out);
+  font-feature-settings: 'cv11', 'ss01', 'calt';
+  transition: background-color var(--cb-dur-expressive) var(--cb-ease-out), color var(--cb-dur-expressive) var(--cb-ease-out);
+  scrollbar-color: color-mix(in srgb, var(--cb-text-tertiary) 45%, transparent) transparent;
+  scrollbar-width: thin;
 }
 
-.cb-app :where(h1, h2, h3, h4, p, ul, ol, dl, dd, figure, pre) {
+.cb-app ::selection {
+  background: color-mix(in srgb, var(--cb-accent) 28%, transparent);
+}
+
+.cb-app :where(h1, h2, h3, h4, p, ul, ol, dl, dd, figure, pre, fieldset) {
   margin: 0;
+}
+
+.cb-app :where(h1, h2, h3) {
+  letter-spacing: var(--cb-tracking-heading);
+  text-wrap: balance;
 }
 
 .cb-app :where(ul, ol) {
@@ -57,6 +70,7 @@ body {
   background: none;
   border: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cb-app :where(button:disabled) {
@@ -68,10 +82,11 @@ body {
   font-family: var(--cb-font-ui);
 }
 
-/* Focus: always visible for keyboard users, on every surface including frosted layers. */
+/* Focus: always visible for keyboard users, on every surface including frosted layers and bokeh. */
 .cb-app :focus-visible {
   outline: var(--cb-focus-width) solid var(--cb-focus-ring);
   outline-offset: var(--cb-focus-offset);
+  box-shadow: 0 0 0 calc(var(--cb-focus-width) + var(--cb-focus-offset)) var(--cb-surface-base);
 }
 
 .cb-app :focus:not(:focus-visible) {
@@ -111,4 +126,44 @@ body {
 .cb-icon {
   flex: none;
   display: block;
+}
+
+/* --- Shared motion verbs (Blueprint 03 §4.1: appear · dock · morph · settle · reflow · reveal · dismiss) --- */
+@keyframes cb-appear {
+  from {
+    opacity: 0;
+    transform: translateY(var(--cb-enter-shift)) scale(0.985);
+  }
+}
+@keyframes cb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--cb-enter-shift) * 0.75));
+  }
+}
+@keyframes cb-settle {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(var(--cb-settle-scale));
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes cb-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(-4px);
+  }
+}
+@keyframes cb-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--cb-status-error) 45%, transparent);
+  }
+  60% {
+    box-shadow: 0 0 0 7px transparent;
+  }
 }

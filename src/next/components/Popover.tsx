@@ -5,16 +5,28 @@ interface PopoverProps {
   /** Accessible name and tooltip of the trigger; must contain any visible trigger text. */
   label: string;
   icon: IconName;
+  iconSize?: number;
   /** Optional visible trigger text next to the icon. */
   text?: string;
   textClassName?: string;
   placement?: 'bottom-end' | 'top-start' | 'right-end';
   triggerClassName?: string;
+  panelClassName?: string;
   children: (close: () => void) => ReactNode;
 }
 
-/** Non-modal popover (IA-02 L3): Escape and outside click close it and return focus to the trigger. */
-export function Popover({ label, icon, text, textClassName, placement = 'bottom-end', triggerClassName, children }: PopoverProps) {
+/** Non-modal popover (IA-02 L3): expands from its trigger; Escape and outside click close it and return focus. */
+export function Popover({
+  label,
+  icon,
+  iconSize = 20,
+  text,
+  textClassName,
+  placement = 'bottom-end',
+  triggerClassName,
+  panelClassName,
+  children,
+}: PopoverProps) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -58,11 +70,17 @@ export function Popover({ label, icon, text, textClassName, placement = 'bottom-
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((v) => !v)}
       >
-        <Icon name={icon} size={20} />
+        <Icon name={icon} size={iconSize} />
         {text && <span className={textClassName}>{text}</span>}
       </button>
       {open && (
-        <div ref={panelRef} id={panelId} role="group" aria-label={label} className={`cb-popover__panel cb-popover__panel--${placement}`}>
+        <div
+          ref={panelRef}
+          id={panelId}
+          role="group"
+          aria-label={label}
+          className={`cb-popover__panel cb-popover__panel--${placement}${panelClassName ? ` ${panelClassName}` : ''}`}
+        >
           {children(() => close())}
         </div>
       )}

@@ -45,10 +45,15 @@ export const fileExtension = (fileName: string): string => {
   return dot > 0 ? fileName.slice(dot + 1).toUpperCase() : 'DATEI';
 };
 
+/** Text of the first Markdown heading, if any (plain text, never HTML). */
+export const firstHeading = (body: string): string | undefined => /^#{1,6}\s+(.+)$/m.exec(body)?.[1]?.trim();
+
 /** Plain-text excerpt for previews; Markdown markers are stripped, nothing is interpreted as HTML. */
-export function excerpt(item: Item, max = 180): string {
+export function excerpt(item: Item, max = 180, omitFirstHeading = false): string {
   if (item.kind !== 'text' && item.kind !== 'markdown') return '';
-  const plain = item.body
+  let body = item.body;
+  if (omitFirstHeading) body = body.replace(/^#{1,6}\s+.+$/m, '');
+  const plain = body
     .replace(/^#{1,6}\s+/gm, '')
     .replace(/^[-*]\s+/gm, '• ')
     .replace(/\s*\n+\s*/g, ' ')

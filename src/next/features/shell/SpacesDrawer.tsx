@@ -1,4 +1,5 @@
 import { usePreview } from '../../app/context';
+import { BrandMark } from '../../components/BrandMark';
 import { Dialog } from '../../components/Dialog';
 import { Icon } from '../../components/Icon';
 import { IconButton } from '../../components/IconButton';
@@ -12,7 +13,10 @@ export function SpacesDrawer() {
     <Dialog open={state.overlay === 'spaces-drawer'} onClose={close} labelledBy="cb-drawer-title" variant="drawer">
       <div className="cb-drawer">
         <header className="cb-drawer__header">
-          <h2 id="cb-drawer-title">Spaces</h2>
+          <span className="cb-drawer__brand">
+            <BrandMark size={32} />
+            <h2 id="cb-drawer-title">Spaces</h2>
+          </span>
           <IconButton icon="x" label="Spaces schließen" onClick={close} />
         </header>
         <SpaceNav idPrefix="cb-drawer" />

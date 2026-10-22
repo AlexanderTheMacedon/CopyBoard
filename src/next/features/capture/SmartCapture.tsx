@@ -16,9 +16,12 @@ export function focusCapture() {
 
 type CaptureState = 'rest' | 'focus' | 'drag';
 
+const pasteHint = () => (typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘V' : 'Strg V');
+
 /**
- * Smart Capture Bar (D-003, DS-C07). Demo: text stays in this component only, nothing is saved, dropped files are never read.
- * `data-state` exposes rest/focus/drag for the design run's expand choreography (M-03).
+ * Smart Capture Bar (D-003, DS-C07, M-03). Demo: text stays in this component only, nothing is saved, dropped files are
+ * never read. `data-state` exposes rest/focus/drag; the drop zone and the action row stay mounted and only expand, so the
+ * input never remounts and the caret never jumps (SM-10).
  */
 export function SmartCapture() {
   const { dispatch, notify } = usePreview();
@@ -56,7 +59,9 @@ export function SmartCapture() {
         Smart Capture
       </h2>
       <div className="cb-capture__field">
-        <Icon name="plus" className="cb-capture__lead" />
+        <span className="cb-capture__lead" aria-hidden="true">
+          <Icon name="plus" size={18} />
+        </span>
         <label htmlFor={CAPTURE_INPUT_ID} className="cb-visually-hidden">
           {space ? `Inhalt für ${space.name} erfassen` : 'Inhalt erfassen'}
         </label>
@@ -71,25 +76,39 @@ export function SmartCapture() {
           onBlur={() => setFocused(false)}
           aria-describedby="cb-capture-hint"
         />
+        <div className="cb-capture__tools">
+          <span className="cb-capture__kbd" aria-hidden="true">
+            <kbd className="cb-kbd">{pasteHint()}</kbd> einfügen
+          </span>
+          <IconButton icon="paperclip" label="Anhang hinzufügen (Demo)" onClick={() => notify('Demo: Anhänge sind in der Vorschau nicht verfügbar.')} />
+          <IconButton icon="mic" label="Aufnahme öffnen (Demo)" onClick={() => dispatch({ type: 'setRecorderOpen', open: true })} />
+        </div>
       </div>
-      <div className="cb-capture__dropzone" aria-hidden={!dragging}>
-        <Icon name="inbox" />
-        <span>Ablegen – in der Vorschau werden keine Dateien übernommen</span>
+      <div className="cb-capture__reveal" data-open={dragging || undefined}>
+        <div>
+          <div className="cb-capture__dropzone" aria-hidden={!dragging}>
+            <Icon name="inbox" size={22} />
+            <span>Hier ablegen – in der Vorschau werden keine Dateien übernommen</span>
+          </div>
+        </div>
       </div>
-      <div className="cb-capture__actions">
-        <IconButton icon="paperclip" label="Anhang hinzufügen (Demo)" onClick={() => notify('Demo: Anhänge sind in der Vorschau nicht verfügbar.')} />
-        <IconButton icon="mic" label="Aufnahme öffnen (Demo)" onClick={() => dispatch({ type: 'setRecorderOpen', open: true })} />
-        <p id="cb-capture-hint" className="cb-capture__hint">
-          <DemoBadge /> Wird nicht gespeichert
-        </p>
-        <button
-          type="button"
-          className="cb-button cb-button--primary"
-          disabled={!text.trim()}
-          onClick={() => notify('Demo: Erfassen ist in der Vorschau nicht verfügbar. Es wurde nichts gespeichert.')}
-        >
-          Hinzufügen
-        </button>
+      <div className="cb-capture__reveal" data-open={captureState === 'focus' || undefined}>
+        <div>
+          <div className="cb-capture__actions">
+            <p id="cb-capture-hint" className="cb-capture__hint">
+              <DemoBadge /> Wird nicht gespeichert
+            </p>
+            <button
+              type="button"
+              className="cb-button cb-button--primary"
+              disabled={!text.trim()}
+              onClick={() => notify('Demo: Erfassen ist in der Vorschau nicht verfügbar. Es wurde nichts gespeichert.')}
+            >
+              Hinzufügen
+              <Icon name="arrowRight" size={16} />
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );

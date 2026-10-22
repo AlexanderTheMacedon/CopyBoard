@@ -58,9 +58,11 @@ function restoreBoardFocus(itemId: string) {
   });
 }
 
+const step = (i: number) => ({ '--i': i }) as CSSProperties;
+
 /**
  * Adaptive Item Inspector (D-004, DS-C20): non-modal detail panel, board stays visible. On narrow screens CSS turns it into a
- * full sheet. Initial focus goes to the title; closing returns focus to the card.
+ * full sheet. Initial focus goes to the title; closing returns focus to the card. Sections reveal with a short stagger (M-05).
  */
 export function Inspector() {
   const { state, dispatch, library } = usePreview();
@@ -92,19 +94,19 @@ export function Inspector() {
   };
 
   return (
-    <aside className="cb-inspector" aria-labelledby="cb-inspector-title" onKeyDown={onKeyDown} data-kind={item.kind}>
-      <div className="cb-inspector__header">
-        <p className="cb-inspector__kind">
-          <Icon name={kindIcon[item.kind]} size={16} />
+    <aside key={item.id} className="cb-inspector" aria-labelledby="cb-inspector-title" onKeyDown={onKeyDown} data-kind={item.kind}>
+      <div className="cb-inspector__header" style={step(0)}>
+        <p className="cb-kind" data-kind={item.kind}>
+          <Icon name={kindIcon[item.kind]} size={14} />
           {kindLabel[item.kind]}
         </p>
         <IconButton icon="x" label="Inspector schließen" onClick={close} />
       </div>
-      <h2 id="cb-inspector-title" ref={headingRef} tabIndex={-1} className="cb-inspector__title">
+      <h2 id="cb-inspector-title" ref={headingRef} tabIndex={-1} className="cb-inspector__title" style={step(1)}>
         {item.title}
       </h2>
       {space && (
-        <p className="cb-inspector__space">
+        <p className="cb-inspector__space" style={step(2)}>
           <span className="cb-space-chip" style={{ '--cb-chip': spaceColorVar(space.color) } as CSSProperties}>
             {space.name}
           </span>
@@ -116,9 +118,14 @@ export function Inspector() {
         </p>
       )}
 
-      <div className="cb-inspector__actions" role="group" aria-label="Aktionen">
-        {itemActions(item, state.location).map((action) => (
-          <button key={action.id} type="button" className="cb-button cb-button--secondary" onClick={() => runAction(action, item)}>
+      <div className="cb-inspector__actions" role="group" aria-label="Aktionen" style={step(3)}>
+        {itemActions(item, state.location).map((action, i) => (
+          <button
+            key={action.id}
+            type="button"
+            className={`cb-button ${i === 0 ? 'cb-button--primary' : 'cb-button--secondary'}`}
+            onClick={() => runAction(action, item)}
+          >
             <Icon name={action.icon} size={16} />
             <span>{action.label}</span>
             {action.availability === 'demo' && <span className="cb-demo-badge">Demo</span>}
@@ -126,11 +133,11 @@ export function Inspector() {
         ))}
       </div>
 
-      <div className="cb-inspector__content">
+      <div className="cb-inspector__content" style={step(4)}>
         <InspectorContent item={item} />
       </div>
 
-      <dl className="cb-inspector__facts cb-inspector__facts--meta">
+      <dl className="cb-inspector__facts cb-inspector__facts--meta" style={step(5)}>
         <dt>Erstellt</dt>
         <dd>
           <time dateTime={item.createdAt}>{formatDateTime(item.createdAt)}</time>
