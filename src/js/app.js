@@ -1,6 +1,6 @@
 import {
   MAX_FILE_BYTES,
-  MAX_TOTAL_BYTES,
+  MAX_LOCAL_STATE_CHARS,
   STORAGE_KEY,
   STATE_SCHEMA_VERSION,
   AUTOSAVE_PREF_KEY,
@@ -85,6 +85,9 @@ import { showToast } from './ui/toast.js';
   let persistPending = false;
   let lastPersistedJson = '';
   let persistErrorShown = false;
+  // R01: single save-block state. null | 'quota' | 'foreign-writer' | 'unreadable-store'
+  let persistBlockedReason = null;
+  let unreadableRawState = null; // untouched STORAGE_KEY string, kept in memory for raw export only
   let state = null; // versionierter, normalisierter CopyBoard-State
   let cloudClient = null;
   let cloudUser = null;
@@ -450,20 +453,33 @@ import { showToast } from './ui/toast.js';
       data
     };
   }
+  /**
+   * Classifies the stored board: absent | valid | unreadable | unsupported.
+   * Unreadable and unsupported values are never normalized back into STORAGE_KEY.
+   */
   function loadPersistedState(){
+    let raw = null;
+    try{ raw = localStorage.getItem(STORAGE_KEY); }
+    catch(e){ return {status:'unreadable', raw:null}; }
+    if(!raw) return {status:'absent'};
+    let parsed;
+    try{ parsed = JSON.parse(raw); }
+    catch(e){ console.warn('CopyBoard: gespeicherter State ist kein gültiges JSON.', e); return {status:'unreadable', raw}; }
+    if(!isPlainObject(parsed)) return {status:'unreadable', raw};
     try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
-        lastPersistedJson = raw;
-        return normalizeState(JSON.parse(raw));
-      }
-    }catch(e){ console.warn('CopyBoard: gespeicherter State konnte nicht normalisiert werden.', e); }
-    return null;
+      const normalized = normalizeState(parsed);
+      lastPersistedJson = raw;
+      return {status:'valid', state:normalized};
+    }catch(e){
+      console.warn('CopyBoard: gespeicherter State konnte nicht normalisiert werden.', e);
+      return {status:/^UNSUPPORTED_/.test(e?.message) ? 'unsupported' : 'unreadable', raw};
+    }
   }
   function nowTimeStr(ts=Date.now()){ return new Date(ts).toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit', second:'2-digit'}); }
   function updateAutosaveStatus(html){ if(autosaveStatusEl) autosaveStatusEl.innerHTML = html; }
   function refreshAutosaveStatus(){
     if(!storageAvailable){ updateAutosaveStatus('Nicht<br>verfügbar'); return; }
+    if(persistBlockedReason){ updateAutosaveStatus(persistBlockedReason === 'quota' ? 'Speichern<br>fehlgeschlagen' : 'Speichern<br>gesperrt'); return; }
     if(memoryProtectionOn){
       updateAutosaveStatus(lastSavedAt ? 'Gespeichert um<br>' + nowTimeStr(lastSavedAt) : 'AutoSave<br>bereit');
     } else {
@@ -496,6 +512,12 @@ import { showToast } from './ui/toast.js';
       refreshAutosaveStatus();
       return true;
     }
+    // 'quota' still attempts the write: setItem is atomic, and only a verified write lifts the block.
+    if(persistBlockedReason && persistBlockedReason !== 'quota'){
+      persistPending = false;
+      refreshAutosaveStatus();
+      return false;
+    }
 
     let serialized;
     try{
@@ -514,31 +536,31 @@ import { showToast } from './ui/toast.js';
     if(!force && serialized === lastPersistedJson){
       persistPending = false;
       sessionDirty = false;
+      if(persistBlockedReason === 'quota') clearPersistBlocked();
       refreshAutosaveStatus();
       return true;
     }
 
     try{
       localStorage.setItem(STORAGE_KEY, serialized);
-      lastPersistedJson = serialized;
-      lastSavedAt = Date.now();
-      localStorage.setItem(AUTOSAVE_LAST_SAVED_KEY, String(lastSavedAt));
-      persistPending = false;
-      sessionDirty = false;
-      persistErrorShown = false;
-      refreshAutosaveStatus();
-      cloudMarkLocalPersisted(serialized);
-      return true;
+      if(localStorage.getItem(STORAGE_KEY) !== serialized) throw new Error('READBACK_MISMATCH');
     }catch(e){
       persistPending = false;
-      updateAutosaveStatus('Speichern<br>fehlgeschlagen');
-      if(!persistErrorShown){
-        persistErrorShown = true;
-        showToast('Konnte nicht gespeichert werden (Speicherlimit erreicht?)');
-      }
       console.error('CopyBoard: Persistieren fehlgeschlagen.', e);
+      setPersistBlocked('quota');
       return false;
     }
+    // Save-ACK: only a verified write updates lastPersistedJson and the saved status.
+    lastPersistedJson = serialized;
+    lastSavedAt = Date.now();
+    try{ localStorage.setItem(AUTOSAVE_LAST_SAVED_KEY, String(lastSavedAt)); }catch(e){} // best effort, not a save failure
+    persistPending = false;
+    sessionDirty = false;
+    persistErrorShown = false;
+    if(persistBlockedReason === 'quota') clearPersistBlocked();
+    refreshAutosaveStatus();
+    cloudMarkLocalPersisted(serialized);
+    return true;
   }
 
   /**
@@ -562,7 +584,7 @@ import { showToast } from './ui/toast.js';
     persistPending = true;
     sessionDirty = true;
 
-    if(immediate) return flushPersistedState({force:options?.force === true});
+    if(immediate || (persistBlockedReason && persistBlockedReason !== 'quota')) return flushPersistedState({force:options?.force === true});
 
     clearPersistTimer();
     updateAutosaveStatus('Speichert<br>…');
@@ -571,6 +593,74 @@ import { showToast } from './ui/toast.js';
       flushPersistedState();
     }, PERSIST_DEBOUNCE_MS);
     return true;
+  }
+
+  // ---------- R01 save block ----------
+  // Higher rank wins: a quota block may escalate to a foreign writer, never the reverse.
+  const PERSIST_BLOCK_RANK = {quota:1, 'foreign-writer':2, 'unreadable-store':3};
+  const PERSIST_BLOCK_TEXT = {
+    quota:'Nicht gespeichert: Der Browser-Speicher ist voll. Lösche große Inhalte oder exportiere ein Backup.',
+    'foreign-writer':'In einem anderen Tab geändert. Neu laden, um weiterzuarbeiten.',
+    'unreadable-store':'Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt.'
+  };
+  function renderPersistBlocked(){
+    const reason = persistBlockedReason;
+    persistBlockedBanner.hidden = !reason;
+    persistBlockedText.textContent = reason ? PERSIST_BLOCK_TEXT[reason] : '';
+    persistRawExportBtn.hidden = reason !== 'unreadable-store' || unreadableRawState === null;
+    persistBackupExportBtn.hidden = !reason || reason === 'unreadable-store';
+    persistReloadBtn.hidden = reason !== 'foreign-writer';
+    refreshAutosaveStatus();
+  }
+  function setPersistBlocked(reason){
+    if(persistBlockedReason && PERSIST_BLOCK_RANK[persistBlockedReason] >= PERSIST_BLOCK_RANK[reason]){ refreshAutosaveStatus(); return; }
+    persistBlockedReason = reason;
+    if(reason !== 'quota') clearPersistTimer();
+    cloudHideUpdate();
+    renderPersistBlocked();
+    showToast(PERSIST_BLOCK_TEXT[reason]);
+  }
+  function clearPersistBlocked(){
+    persistBlockedReason = null;
+    renderPersistBlocked();
+  }
+  /** Capture, duplicate, import and restore paths call this first; deleting stays allowed. */
+  function captureBlocked(){
+    if(!persistBlockedReason) return false;
+    showToast(persistBlockedReason === 'quota'
+      ? 'Speicher voll — zuerst Inhalte löschen oder ein Backup exportieren'
+      : 'Speichern gesperrt — neue Inhalte werden nicht angenommen');
+    return true;
+  }
+  // R01.1: honest edit feedback. Edits are explicit commits, so they flush instead of waiting for
+  // the debounce; "gespeichert" appears only after a verified write (Save-ACK).
+  // applied = UI only (temporary mode) · pending = write still scheduled · saved = verified · failed = blocked or failed
+  function persistEditOutcome(){
+    if(storageAvailable && !memoryProtectionOn){ persistState(); return 'applied'; }
+    if(!persistState({immediate:true})) return 'failed';
+    return persistPending ? 'pending' : 'saved';
+  }
+  function showEditSaveToast(subject, item){
+    // I-C05 stays open: a remote apply may have replaced the board while the editor held this item.
+    if(item && locateItem(item.id)?.item !== item){ showToast(subject+' nicht übernommen · Karte wurde inzwischen ersetzt'); return; }
+    const outcome = persistEditOutcome();
+    if(outcome === 'saved'){ showToast(subject+' gespeichert'); return; }
+    showToast(subject+' übernommen · '+(
+      outcome === 'applied' ? 'Temporärer Modus, nicht gespeichert'
+      : outcome === 'pending' ? 'Speichern ausstehend'
+      : persistBlockedReason && persistBlockedReason !== 'quota' ? 'Speichern gesperrt'
+      : 'Speichern fehlgeschlagen'));
+  }
+  function exportUnreadableRawState(){
+    if(unreadableRawState === null) return;
+    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    downloadBlob(new Blob([unreadableRawState], {type:'application/json'}), 'copyboard-rohdaten-'+stamp+'.json');
+  }
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
   }
   async function migrateFromLegacyWindowStorage(){
     // best-effort one-time import from an earlier version of this tool that used window.storage
@@ -593,6 +683,7 @@ import { showToast } from './ui/toast.js';
     }catch(e){ return null; }
   }
   function estimateBytes(obj){ return new Blob([JSON.stringify(obj)]).size; }
+  function stateChars(obj){ return JSON.stringify(obj).length; } // localStorage measures UTF-16 code units
   function dataOf(sid){
     if(!isPlainObject(state.data)) state.data = {};
     if(!state.data[sid]) state.data[sid] = normalizeSpaceData(null);
@@ -714,6 +805,7 @@ import { showToast } from './ui/toast.js';
     showToast('Space exportiert');
   }
   function duplicateSpace(sp){
+    if(captureBlocked()) return;
     mutationCheckpoint('boardData');
     const newId = uid();
     state.data[newId] = JSON.parse(JSON.stringify(dataOf(sp.id)));
@@ -881,6 +973,11 @@ import { showToast } from './ui/toast.js';
   const dropLine = document.getElementById('dropLine');
   const memoryToggle = document.getElementById('memoryToggle');
   const autosaveStatusEl = document.getElementById('autosaveStatus');
+  const persistBlockedBanner = document.getElementById('persistBlockedBanner');
+  const persistBlockedText = document.getElementById('persistBlockedText');
+  const persistRawExportBtn = document.getElementById('persistRawExportBtn');
+  const persistBackupExportBtn = document.getElementById('persistBackupExportBtn');
+  const persistReloadBtn = document.getElementById('persistReloadBtn');
   const duplicateOverlay = document.getElementById('duplicateOverlay');
   const duplicateList = document.getElementById('duplicateList');
   const duplicateCloseBtn = document.getElementById('duplicateCloseBtn');
@@ -1105,7 +1202,7 @@ import { showToast } from './ui/toast.js';
   }
   function cloudShowUpdate(metadata){
     cloudPendingRemote = metadata;
-    cloudUpdateBanner.classList.add('show');
+    if(!persistBlockedReason) cloudUpdateBanner.classList.add('show');
     cloudSetStatus('attention','Neue Elemente auf einem anderen Gerät verfügbar');
   }
   function cloudHideUpdate(){ cloudUpdateBanner.classList.remove('show'); }
@@ -1124,6 +1221,17 @@ import { showToast } from './ui/toast.js';
     if(error) throw error;
     return data || null;
   }
+  function cloudLocalError(message){ return Object.assign(new Error(message), {localReason:message}); }
+  function cloudRenderReplacedState(){
+    syncFromState();
+    selectedIds.clear(); lastSelectedId = null;
+    selectionBar.classList.remove('show');
+    applyViewMode();
+    titleInput.value = currentSpace().name;
+    renderTabs();
+    refreshItems();
+    render(true);
+  }
   async function cloudApplySnapshot(metadata){
     if(!metadata?.object_path) throw new Error('Cloud-Snapshot fehlt');
     cloudSetStatus('syncing','Cloud-Stand wird geladen …');
@@ -1134,23 +1242,26 @@ import { showToast } from './ui/toast.js';
     if(metadata.content_hash && hash !== metadata.content_hash) throw new Error('Prüfsumme des Cloud-Stands stimmt nicht');
     const parsed = JSON.parse(serialized);
     const normalized = normalizeState(parsed);
-    if(estimateBytes(normalized) > MAX_TOTAL_BYTES) throw new Error('Cloud-Stand überschreitet das Board-Limit');
+    if(stateChars(normalized) > MAX_LOCAL_STATE_CHARS) throw cloudLocalError('Cloud-Stand ist zu groß für den lokalen Speicher dieses Browsers');
+    if(persistBlockedReason || !memoryProtectionOn) throw cloudLocalError('Cloud-Stand nicht übernommen — lokales Speichern ist nicht aktiv');
 
+    // Revision, hash and meta advance only after a verified local commit; otherwise roll back.
+    const previousState = state;
+    let committed = false;
     cloudApplyingRemote = true;
     try{
       state = normalized;
-      syncFromState();
-      selectedIds.clear(); lastSelectedId = null;
-      selectionBar.classList.remove('show');
-      applyViewMode();
-      titleInput.value = currentSpace().name;
-      renderTabs();
-      refreshItems();
-      render(true);
-      persistState({immediate:true,force:true});
+      cloudRenderReplacedState();
+      committed = persistState({immediate:true,force:true}) === true;
+      if(!committed){
+        state = previousState;
+        cloudRenderReplacedState();
+        flushPersistedState(); // lifts a quota block only if memory equals the last verified save again
+      }
     }finally{
       cloudApplyingRemote = false;
     }
+    if(!committed) throw cloudLocalError('Cloud-Stand konnte lokal nicht gespeichert werden — vorheriger Stand bleibt aktiv');
 
     cloudRevision = Number(metadata.revision) || 0;
     cloudObjectPath = metadata.object_path;
@@ -1167,9 +1278,12 @@ import { showToast } from './ui/toast.js';
       const metadata = options.metadata || await cloudFetchMetadata();
       if(!metadata){ showToast('Noch kein Cloud-Stand vorhanden'); return; }
       const apply = async()=>{
-        if(options.manual && cloudDirty) savePreImportRecovery();
+        if(options.manual && cloudDirty && !savePreImportRecovery()){
+          showToast('Laden abgebrochen: Sicherung konnte nicht angelegt werden. Exportiere zuerst ein Backup.');
+          return;
+        }
         try{ await cloudApplySnapshot(metadata); }
-        catch(error){ console.error('CopyBoard Cloud: Download fehlgeschlagen.', error); cloudSetStatus('error','Cloud-Stand konnte nicht geladen werden'); showToast('Cloud-Stand konnte nicht geladen werden'); }
+        catch(error){ console.error('CopyBoard Cloud: Download fehlgeschlagen.', error); cloudSetStatus('error',error?.localReason || 'Cloud-Stand konnte nicht geladen werden'); showToast(error?.localReason || 'Cloud-Stand konnte nicht geladen werden'); }
       };
       if(options.manual && cloudDirty){
         openConfirm(
@@ -1256,11 +1370,16 @@ import { showToast } from './ui/toast.js';
   async function cloudUploadNow(){
     if(!cloudClient || !cloudUser || cloudUploadRunning || cloudApplyingRemote || !memoryProtectionOn) return false;
     clearTimeout(cloudPushTimer); cloudPushTimer = null;
+    // Upload only the last verified local save. flush() === true means lastPersistedJson equals the active state.
+    if(!flushPersistedState() || persistBlockedReason || !lastPersistedJson){
+      cloudSetStatus('error','Lokale Änderungen nicht gespeichert – Upload angehalten');
+      return false;
+    }
     cloudUploadRunning = true;
     cloudSetStatus('syncing','Wird hochgeladen …');
     let uploadedPath = null;
     try{
-      const serialized = JSON.stringify(state);
+      const serialized = lastPersistedJson;
       const hash = await cloudHash(serialized);
       const currentMetadata = await cloudFetchMetadata();
       const remoteRevision = Number(currentMetadata?.revision) || 0;
@@ -1502,8 +1621,8 @@ import { showToast } from './ui/toast.js';
       }
     }
     entries.sort((a,b)=>b.bytes-a.bytes);
-    const used = estimateBytes(state);
-    return {used, percent:Math.min(100, used / MAX_TOTAL_BYTES * 100), cards, entries};
+    const used = stateChars(state);
+    return {used, percent:Math.min(100, used / MAX_LOCAL_STATE_CHARS * 100), cards, entries};
   }
   function deleteStorageEntry(entry){
     const data = state.data?.[entry.spaceId];
@@ -1537,7 +1656,7 @@ import { showToast } from './ui/toast.js';
     storageMeterFill.classList.toggle('warn', snap.percent >= 70 && snap.percent < 90);
     storageMeterFill.classList.toggle('danger', snap.percent >= 90);
     storageUsedLabel.textContent = fmtSize(snap.used)+' verwendet';
-    storageLimitLabel.textContent = 'von '+fmtSize(MAX_TOTAL_BYTES);
+    storageLimitLabel.textContent = 'von '+fmtSize(MAX_LOCAL_STATE_CHARS);
     storageCardsCount.textContent = String(snap.cards);
     storageSpacesCount.textContent = String((state.spaces || []).length);
     storagePercentLabel.textContent = Math.round(snap.percent)+' %';
@@ -1602,8 +1721,9 @@ import { showToast } from './ui/toast.js';
     memoryProtectionOn = !memoryProtectionOn;
     setSetting('device.autoSave', memoryProtectionOn, {persist:false});
     if(memoryProtectionOn){
-      persistState({immediate:true, force:true});
-      showToast('AutoSave aktiviert — der aktuelle Stand wurde gespeichert');
+      showToast(persistState({immediate:true, force:true})
+        ? 'AutoSave aktiviert — der aktuelle Stand wurde gespeichert'
+        : 'AutoSave aktiviert — Speichern ist derzeit nicht möglich');
     } else {
       sessionDirty = false;
       showToast('Temporärer Modus aktiviert — der letzte gespeicherte Stand bleibt erhalten');
@@ -1615,6 +1735,16 @@ import { showToast } from './ui/toast.js';
     if(memoryProtectionOn && persistPending) flushPersistedState();
   }
 
+  // G5: another tab wrote the board. Risk limitation only — storage events are not atomic (no single-writer lock).
+  window.addEventListener('storage', (e)=>{
+    if(e.storageArea !== localStorage || (e.key !== STORAGE_KEY && e.key !== null)) return;
+    if(e.key === STORAGE_KEY && e.newValue === lastPersistedJson) return;
+    setPersistBlocked('foreign-writer');
+  });
+  persistRawExportBtn.addEventListener('click', exportUnreadableRawState);
+  persistBackupExportBtn.addEventListener('click', ()=>exportBackup());
+  persistReloadBtn.addEventListener('click', ()=>location.reload());
+
   window.addEventListener('pagehide', flushBeforePageExit);
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState === 'hidden') flushBeforePageExit();
@@ -1622,7 +1752,7 @@ import { showToast } from './ui/toast.js';
 
   window.addEventListener('beforeunload', (e)=>{
     flushBeforePageExit();
-    if(memoryProtectionOn || !sessionDirty) return;
+    if((memoryProtectionOn && persistBlockedReason !== 'quota') || !sessionDirty) return;
     e.preventDefault();
     e.returnValue = '';
   });
@@ -2321,8 +2451,8 @@ import { showToast } from './ui/toast.js';
     if(!Array.isArray(state.helpNotes)) state.helpNotes=[];
     mutationCheckpoint('notes');
     state.helpNotes.push({id:'note_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), text:value, createdAt:Date.now()});
-    helpNoteInput.value=''; persistState(); renderHelpNotes();
-    showToast('Sticky Note gespeichert');
+    helpNoteInput.value=''; renderHelpNotes();
+    showEditSaveToast('Sticky Note');
   }
   helpNoteAddBtn?.addEventListener('click', addHelpNote);
   helpNoteInput?.addEventListener('keydown', e=>{ if((e.metaKey||e.ctrlKey) && e.key==='Enter'){ e.preventDefault(); addHelpNote(); } });
@@ -2538,6 +2668,7 @@ import { showToast } from './ui/toast.js';
   }
 
   function duplicateItem(item, ctx, options={}){
+    if(captureBlocked()) return;
     ctx = ctx || {};
     if(!options.skipHistory) mutationCheckpoint('content', currentSpaceId);
     const data = dataOf(currentSpaceId);
@@ -2611,6 +2742,7 @@ import { showToast } from './ui/toast.js';
     showContextMenu(lastCtxPos.x, lastCtxPos.y, rows);
   }
   function copyItemToSpace(item, targetSpaceId){
+    if(captureBlocked()) return;
     mutationCheckpoint('crossSpace');
     const sourceData = dataOf(currentSpaceId);
     const targetData = dataOf(targetSpaceId);
@@ -2815,9 +2947,9 @@ import { showToast } from './ui/toast.js';
     syncHelpSettings();
   });
   helpDefaultSortSelect?.addEventListener('change', ()=>{
-    setSetting('behavior.defaultSortMode', helpDefaultSortSelect.value);
+    setSetting('behavior.defaultSortMode', helpDefaultSortSelect.value, {persist:false});
     syncHelpSettings();
-    showToast('Standardsortierung gespeichert');
+    showEditSaveToast('Standardsortierung');
   });
   helpRecentLimitSelect?.addEventListener('change', ()=>{
     const limit = setSetting('history.recentLimit', Number(helpRecentLimitSelect.value), {persist:false});
@@ -3111,7 +3243,7 @@ import { showToast } from './ui/toast.js';
       persistState();
       markRecent(session.item,'edit',session.ctx?.insideFolder ? session.ctx.folderId : null);
       if(session.ctx?.insideFolder) renderFolderGrid(); else { refreshItems(); render(); }
-      showToast('Text gespeichert');
+      showEditSaveToast('Text', session.item);
     }else{
       session.editor.remove();
       if(saveChanges) showToast('Keine Änderungen');
@@ -3505,6 +3637,7 @@ import { showToast } from './ui/toast.js';
 
   // ---------- item actions ----------
   function addItem(newItem, allowDuplicate=false){
+    if(captureBlocked()) return;
     const data = dataOf(currentSpaceId);
     if(!allowDuplicate){
       const duplicates = findExactDuplicates(newItem);
@@ -3513,17 +3646,18 @@ import { showToast } from './ui/toast.js';
         return;
       }
     }
-    const projectedBytes = estimateBytes(state) + itemStorageBytes(newItem);
-    if(projectedBytes > MAX_TOTAL_BYTES){
-      showToast('20-MB-Limit erreicht — lösche oder exportiere große Inhalte');
+    const projectedChars = stateChars(state) + stateChars(newItem) + newItem.id.length + 8;
+    if(projectedChars > MAX_LOCAL_STATE_CHARS){
+      showToast('Lokales Speicherlimit erreicht — lösche oder exportiere große Inhalte');
       return;
     }
-    if(projectedBytes > MAX_TOTAL_BYTES * .9){ showToast('Speicher fast voll — mehr als 90 % belegt'); }
+    if(projectedChars > MAX_LOCAL_STATE_CHARS * .9){ showToast('Speicher fast voll — mehr als 90 % belegt'); }
     mutationCheckpoint('content', currentSpaceId);
     data.items[newItem.id] = newItem;
     data.itemIds.unshift(newItem.id);
     refreshItems(); render();
     persistState();
+    return true;
   }
   function removeItem(id){
     const data = dataOf(currentSpaceId);
@@ -4246,13 +4380,15 @@ import { showToast } from './ui/toast.js';
     try{ localStorage.removeItem(PREIMPORT_RECOVERY_KEY); }catch(e){}
   }
   function restorePreImportRecovery(){
+    if(captureBlocked()) return;
     const recovery = loadPreImportRecovery();
     if(!recovery){ showToast('Kein Wiederherstellungspunkt vorhanden'); return; }
     const stamp = new Date(recovery.savedAt).toLocaleString('de-DE');
     openConfirm('Stand vor Import wiederherstellen?', `Der aktuelle Stand wird durch die lokale Sicherung vom ${stamp} ersetzt.`, 'Wiederherstellen', ()=>{
       state = normalizeState(cloneJson(recovery.state));
       syncFromState(); applyViewMode(); titleInput.value = currentSpace().name;
-      renderTabs(); refreshItems(); render(); persistState({immediate:true, force:true}); clearPreImportRecovery();
+      renderTabs(); refreshItems(); render();
+      if(persistState({immediate:true, force:true}) && memoryProtectionOn) clearPreImportRecovery();
       showToast('Stand vor Import wiederhergestellt');
     });
   }
@@ -4271,6 +4407,7 @@ import { showToast } from './ui/toast.js';
     }
     const importedName = uniqueSpaceName(payload.name);
     openConfirm('Space importieren?', `„${importedName}“ wird als neuer Space ergänzt. Dein aktuelles Board bleibt erhalten.`, 'Importieren', async ()=>{
+      if(captureBlocked()) return;
       const newId = uid();
       const importedData = normalizeSpaceData(cloneJson(payload.data));
       state.data[newId] = importedData;
@@ -4294,16 +4431,18 @@ import { showToast } from './ui/toast.js';
     showToast('Backup heruntergeladen');
   }
   function importBoardState(importedState, meta={}){
+    if(captureBlocked()) return;
     if(!isValidBoardState(importedState)){ showToast('Ungültige Backup-Datei'); return; }
     let normalizedImport;
     try{ normalizedImport = normalizeState(cloneJson(importedState)); }
     catch(e){ showToast('Nicht unterstützte State-Version'); return; }
     const summary = importSummary(normalizedImport);
-    if(summary.bytes > MAX_TOTAL_BYTES){ showToast('Backup überschreitet das 20-MB-Board-Limit'); return; }
+    if(stateChars(normalizedImport) > MAX_LOCAL_STATE_CHARS){ showToast('Backup ist zu groß für den lokalen Speicher dieses Browsers'); return; }
     const exported = meta.exportedAt ? ` · Export: ${new Date(meta.exportedAt).toLocaleString('de-DE')}` : '';
     const msg = `${summary.spaces} Space${summary.spaces===1?'':'s'}, ${summary.cards} Karte${summary.cards===1?'':'n'}, ${summary.folders} Ordner · ${fmtSize(summary.bytes)}${exported}. Der aktuelle Stand wird ersetzt und vorher lokal gesichert.`;
     openConfirm('Board importieren?', msg, 'Sichern & importieren', ()=>{
-      const recoverySaved = savePreImportRecovery();
+      if(captureBlocked()) return;
+      if(!savePreImportRecovery()){ showToast('Import abgebrochen: Sicherung konnte nicht angelegt werden. Exportiere zuerst ein Backup.'); return; }
       state = normalizedImport;
       syncFromState();
       applyViewMode();
@@ -4312,7 +4451,7 @@ import { showToast } from './ui/toast.js';
       refreshItems();
       render();
       persistState();
-      showToast(recoverySaved ? 'Board importiert · Rückkehr möglich' : 'Board importiert');
+      showToast('Board importiert · Rückkehr möglich');
     });
   }
   function importBackupFile(file){
@@ -4609,7 +4748,7 @@ import { showToast } from './ui/toast.js';
       persistState();
       markRecent(item,'edit',ctx && ctx.insideFolder ? ctx.folderId : null);
       if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
-      showToast('Gespeichert');
+      showEditSaveToast('Text', item);
     } else {
       ingestText(val);
     }
@@ -4649,7 +4788,7 @@ import { showToast } from './ui/toast.js';
     editImageContext = null;
     markRecent(item,'edit');
     if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
-    showToast('Bild gespeichert');
+    showEditSaveToast('Bild', item);
   });
 
   // ---- file replace (re-upload swaps content in place) ----
@@ -4671,7 +4810,7 @@ import { showToast } from './ui/toast.js';
       item.type = file.type && file.type.startsWith('image/') ? 'image' : 'file';
       markRecent(item,'edit');
       if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
-      showToast('Datei ersetzt');
+      showEditSaveToast('Datei', item);
     }catch(err){ showToast('Konnte Datei nicht lesen'); }
   });
 
@@ -4688,8 +4827,7 @@ import { showToast } from './ui/toast.js';
         stream.getTracks().forEach(t=>t.stop());
         const blob = new Blob(recordedChunks, {type:'audio/webm'});
         const dataUrl = await blobToDataURL(blob);
-        addItem({ id:uid(), type:'file', name:'Sprachmemo '+new Date().toLocaleTimeString('de-DE').slice(0,5).replace(':','-')+'.webm', mime:'audio/webm', size:blob.size, timestamp:Date.now(), data:dataUrl });
-        showToast('Sprachmemo gespeichert');
+        if(addItem({ id:uid(), type:'file', name:'Sprachmemo '+new Date().toLocaleTimeString('de-DE').slice(0,5).replace(':','-')+'.webm', mime:'audio/webm', size:blob.size, timestamp:Date.now(), data:dataUrl })) showEditSaveToast('Sprachmemo');
       };
       mediaRecorder.start();
       micBtn.classList.add('recording');
@@ -5077,8 +5215,14 @@ import { showToast } from './ui/toast.js';
 
     // Always restore the last persisted snapshot when available. In temporary mode,
     // changes from the current session are deliberately not written back.
-    state = loadPersistedState();
-    if(!state){ state = await migrateFromLegacyWindowStorage(); }
+    const loaded = loadPersistedState();
+    state = loaded.status === 'valid' ? loaded.state : null;
+    if(loaded.status === 'unreadable' || loaded.status === 'unsupported'){
+      // G1: keep STORAGE_KEY byte-identical; run in memory only, no cloud, no automatic restart.
+      unreadableRawState = loaded.raw ?? null;
+      setPersistBlocked('unreadable-store');
+    }
+    if(!state && !persistBlockedReason){ state = await migrateFromLegacyWindowStorage(); }
     if(!state){ state = defaultState(); }
     state = normalizeState(state);
 
@@ -5094,6 +5238,7 @@ import { showToast } from './ui/toast.js';
     render();
     applyMemoryToggle();
     if(memoryProtectionOn) persistState({immediate:true}); // write the (possibly migrated/defaulted) baseline once
+    if(persistBlockedReason === 'unreadable-store'){ cloudSetStatus('error','Cloud pausiert — gespeicherte Daten nicht lesbar'); return; }
     await initCloudSync();
   })();
 })();

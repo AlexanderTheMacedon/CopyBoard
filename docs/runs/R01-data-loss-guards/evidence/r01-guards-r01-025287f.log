@@ -1,0 +1,33 @@
+A1 [PASS] Gespeicherter State: schemaVersion:2 — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true "Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt."; Paste abgelehnt=true (Toast "Speichern gesperrt — neue Inhalte werden nicht angenommen"); Export=Original: true (27170 Zeichen); Status="Speichern gesperrt"; Cloud-Operationen=0 (Schreibend 0)
+A2 [PASS] Gespeicherter State: abgeschnittenes JSON — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true "Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt."; Paste abgelehnt=true (Toast "Speichern gesperrt — neue Inhalte werden nicht angenommen"); Export=Original: true (5000 Zeichen); Status="Speichern gesperrt"; Cloud-Operationen=0 (Schreibend 0)
+A2b [PASS] Gespeicherter State: settings.schemaVersion:2 — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true "Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt."; Paste abgelehnt=true (Toast "Speichern gesperrt — neue Inhalte werden nicht angenommen"); Export=Original: true (27170 Zeichen); Status="Speichern gesperrt"; Cloud-Operationen=0 (Schreibend 0)
+A2c [PASS] Gespeicherter State: JSON-Array statt Objekt — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true "Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt."; Paste abgelehnt=true (Toast "Speichern gesperrt — neue Inhalte werden nicht angenommen"); Export=Original: true (7 Zeichen); Status="Speichern gesperrt"; Cloud-Operationen=0 (Schreibend 0)
+A3 [PASS] Rausch-PNGs bis zur Grenze: Ablehnung vor dem Fehlschlag, Kartenzahl UI = gespeichert = nach Reload
+    → #1: Karten 1, Status "Gespeichert um 22:39:07", Toast ""; #2: Karten 2, Status "Gespeichert um 22:39:08", Toast ""; #3: Karten 2, Status "Gespeichert um 22:39:08", Toast "Lokales Speicherlimit erreicht — lösche oder exportiere große Inhalte"; #4: Karten 2, Status "Gespeichert um 22:39:08", Toast "Lokales Speicherlimit erreicht — lösche oder exportiere große Inhalte"; abgelehnt bei Bild 3; Speichern je fehlgeschlagen=false; UI=2, gespeichert=2 (3924041 Zeichen), nach Reload=2
+A3b [PASS] Echter Quota-Fehler (Speicher künstlich verknappt): dauerhafter Hinweis, kein "Gespeichert", Erfassung gesperrt, RAM-Export rettet
+    → Hinweis=true "Nicht gespeichert: Der Browser-Speicher ist voll. Lösche große Inhalte oder exportiere ein Backup."; Status="Speichern fehlgeschlagen"; gespeicherter Stand unverändert=true; UI-Karten=2; Paste abgelehnt=true (Toast "Speicher voll — zuerst Inhalte löschen oder ein Backup exportieren"); RAM-Backup Karten=2 (Format copyboard-backup v1); Verlassen-Warnung=true
+A4 [PASS] Wie A3b, dann gespeicherte Karte löschen: verifizierter Save hebt Sperre auf, Erfassung wieder möglich
+    → Hinweis nach Löschen=false; Status="Gespeichert um 22:39:15"; gespeichert: zuvor ungespeichertes Bild übernommen=true; neuer Paste gespeichert=true; UI=2, nach Reload=2
+S1 [PASS] Schreiben von copyboard_autosave_last_saved scheitert, State-Write gelingt
+    → State gespeichert=true; Status="Gespeichert um 22:39:17"; Sperr-Hinweis=false
+A5 [PASS] Board mit 3,3 M Zeichen, Backup-Import, Recovery-Kopie passt nicht in den Speicher
+    → Board 3301172 Zeichen; nach Import byte-identisch=true; UI zeigt alten Stand=true; Recovery-Key vorhanden=false; Toast="Import abgebrochen: Sicherung konnte nicht angelegt werden. Exportiere zuerst ein Backup."
+A5b [PASS] Manuelles "Aktualisieren" bei lokalen Änderungen, Recovery-Kopie passt nicht
+    → Update-Banner=true; lokal byte-identisch=true; lokale Änderung erhalten=true; Toast="Laden abgebrochen: Sicherung konnte nicht angelegt werden. Exportiere zuerst ein Backup."; Cloud-Revision=2; Cloud-Schreibops danach=[]
+A6 [PASS] Mock-Snapshot 6,3 M Zeichen, leeres Gerät, danach Reload
+    → Status Start="error / Cloud-Stand ist zu groß für den lokalen Speicher dieses Browsers"; nach Reload="error / Cloud-Stand ist zu groß für den lokalen Speicher dieses Browsers"; lokale Cloud-Meta=null; lokaler State 425 Zeichen; Backend-Revision=1; Originalobjekt vorhanden=true; Cloud-Schreibops=[]
+A6b [PASS] Synchronisiertes Gerät, neuer Cloud-Stand (3 M) passt nicht in den verknappten Speicher → Rollback
+    → vor Reload {"localSame":true,"metaSame":true,"ui":true,"banner":false,"st":"error / Cloud-Stand konnte lokal nicht gespeichert werden — vorheriger Stand bleibt aktiv"}; nach Reload {"localSame":true,"metaSame":true,"ui":true,"banner":false,"st":"error / Cloud-Stand konnte lokal nicht gespeichert werden — vorheriger Stand bleibt aktiv"}; Backend-Revision=2; Objekt rev2 vorhanden=true; Cloud-Schreibops=[]; Füller=4515296 Zeichen
+A7 [PASS] Gescheiterter Save, dann "Jetzt synchronisieren"
+    → Autosave-Status="Speichern fehlgeschlagen"; Sperr-Hinweis=true; Revision 1→1; Cloud-Schreibops=[]; Sync-Status="Lokale Änderungen nicht gespeichert – Upload angehalten"
+A8 [PASS] Zwei Tabs, sequenziell: Tab A speichert, dann Paste im veralteten Tab B; danach Neu laden
+    → B gesperrt nach Write von A=true "In einem anderen Tab geändert. Neu laden, um weiterzuarbeiten."; Karte A erhalten=true; veralteter Paste in B abgelehnt=true; B nach Neu laden sieht A und ist frei=true; A gesperrt nach Write von B=true; final beide Karten gespeichert=true; A zeigt nach Reload 2 Karten
+A8r [RISK] Zwei Tabs, gleichzeitig (5 Durchläufe): echte Schreibrennen
+    → #1: gespeichert A/B=true/false, gesperrt A/B=true/true; #2: gespeichert A/B=true/false, gesperrt A/B=true/true; #3: gespeichert A/B=false/true, gesperrt A/B=true/true; #4: gespeichert A/B=false/true, gesperrt A/B=true/true; #5: gespeichert A/B=true/false, gesperrt A/B=true/true; Durchläufe mit nicht gespeicherter Karte: 5/5
+A10 [PASS] node --check für alle Module
+    → src/js/app.js: ok; src/js/config/constants.js: ok; src/js/ui/toast.js: ok; src/js/utils/files.js: ok; src/js/utils/format.js: ok
+written <local>/evidence/r01-results-r01-025287f.json

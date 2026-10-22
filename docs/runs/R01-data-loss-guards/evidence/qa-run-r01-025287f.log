@@ -1,0 +1,117 @@
+I-01 [PASS] Ctrl/Cmd+V text with focus on board body
+    → 1 card(s) in active space; name="Audit Einfüge-Test 1"
+I-02 [DEFECT] Paste while focus is in unrelated text inputs (palette search, sticky note, cloud e-mail, PIN, inline editor; folder title as control)
+    → Command palette search: NEW CARD CREATED; Sticky note input: NEW CARD CREATED; Cloud e-mail field: NEW CARD CREATED; PIN input: NEW CARD CREATED; Inline text editor: NEW CARD CREATED; Folder title (control: excluded by code): no card
+I-03 [PASS] "Zwischenablage" button pre-fills modal from system clipboard, "Ablegen" creates card
+    → textarea="Aus der Systemzwischenablage", cards=1
+I-04 [PASS] File picker: PNG + TXT + PDF, then an 8 MiB+1 file
+    → types=[file,file,image] → after oversize: 3 cards, toast=""gross.bin" ist zu groß (max. 8.0 MB)"
+I-05 [PASS] Paste text that already exists in another space → "Vorhandenes zeigen"
+    → active=sp_privat, preview=true, items=14
+I-06 [DEFECT] Upload two files at once that are both duplicates of existing items
+    → dialog listed: "b.txt Dein CopyBoard"; after "Trotzdem ablegen": cards=3, second dialog=false
+I-07 [PASS] Click card → preview; Escape closes; focus returns
+    → preview="Meeting-Notizen Q4: Roadmap ab…", open after Esc=false, focus=BODY#
+I-08 [OBSERVATION] Double-click a card
+    → preview open=true; each click of the double-click calls openPreview() (second call re-renders the same preview)
+I-09 [PASS] Right-click opens; Escape / outside click close; submenu via hover and click; viewport clamping
+    → Esc closes: true; outside click closes: true; submenu on hover: true; menu at corner fits viewport: true (show=true)
+I-10 [DEFECT] Escape with a card context menu open inside an open folder
+    → context menu visible=true, folder open=false
+I-11 [DEFECT] Inline text edit: 4 flows (top level / inside folder × typing directly / clicking into the editor first), then Escape and one click elsewhere
+    → [top level, type directly]; after Esc overlays=none, editor still mounted=false; discarded text saved after next click=false | [top level, click into editor] → click into editor opened: previewOverlay; after Esc overlays=none, editor still mounted=true; discarded text saved after next click=true | [folder, type directly]; after Esc overlays=none, editor still mounted=true; discarded text saved after next click=true | [folder, click into editor] → click into editor opened: folderOverlay+previewOverlay; after Esc overlays=folderOverlay, editor still mounted=true; discarded text saved after next click=true
+I-12 [PASS] Inline edit: Ctrl+Enter saves, Ctrl+Z restores
+    → saved=true, undone=true
+I-13 [DEFECT] Hover + Space bar on a normal card and on a PIN-locked card
+    → normal preview=true; locked: PIN prompt=false, preview opened=true (body html length 11)
+I-14 [DEFECT] Ctrl+Z after each mutation type, then Ctrl+Shift+Z
+    → delete card: undo=ok, redo=ok; rename card: undo=ok, redo=ok; toggle favorite: undo=ok, redo=ok; pin card: undo=ok, redo=ok; move to other space: undo=ok, redo=ok; delete space: undo=ok, redo=ok; sort mode change: undo=ok, redo=ok; space color: undo=ok, redo=ok; sticky note add: undo=ok, redo=ok; dissolve folder: undo=ok, redo=ok; clear space: undo=ok, redo=ok; settings reset: undo=FAIL, redo=ok
+I-15 [OBSERVATION] Undo after switching to another space
+    → active space=sp_privat; card restored in Recherche=true; toast="Rückgängig gemacht"; no visible change in current space
+I-16 [DEFECT] Drag a selected stack of 2 cards onto another space tab, then one Ctrl+Z
+    → moved=2; after 1×Undo restored=1/2; after 2×Undo restored=2/2
+I-17 [DEFECT] Undo directly after a full board import
+    → spaces after undo=[Importiert]; orphan data keys=[sp_recherche] (persisted but unreachable)
+I-18 [OBSERVATION] Undo history after reload
+    → toast after reload+undo="Nichts zum Rückgängigmachen"
+I-19 [PASS] Drag card onto another card → folder; drag reorder; drag onto another space tab
+    → merge→folder: f_csv+t_code; reorder changed order: true; to tab moved: true
+I-20 [PASS] Drag reorder while sort mode is not manual
+    → drag hint="Sortierung aktiv: In Ordner oder Space verschieben möglich; manuelles Einordnen ist pausiert"; visual order unchanged=true
+I-21 [NOT VERIFIED] Drag a card out to desktop (DownloadURL)
+    → Requires OS-level drag target; not automatable in headless Chromium
+I-22 [DEFECT] Select two folders and choose "In Ordner"
+    → folder nested in folder=true; after deleting outer folder, unreachable items still stored: [t_code,f_csv]
+I-23 [PASS] Shift-click range, "Alle auswählen", selection bar actions (duplicate, delete)
+    → range="5 ausgewählt", all="9 ausgewählt", items after duplicate=10 (was 9)
+I-24 [PASS] Folder header actions: rename via title, ZIP download, child delete button, dissolve
+    → rename persisted: true; zip download: Alpha neu.zip; child deleted: true, folder still open=true; dissolved (no confirmation): true
+I-46 [DEFECT] Use a card context menu inside an open folder
+    → z-index 90 vs overlay 100; 8/8 rows covered by the folder overlay; clicking "Umbenennen" instead hit the backdrop → open overlays now: folderOverlay; evidence screenshots/desktop-35-folder-context-menu-behind-overlay.png
+I-25 [DEFECT] ZIP download of a folder that contains a PIN-locked image (lock seeded; the in-folder menu is unusable, see I-46)
+    → download=none; toast="ZIP wird erstellt…"; uncaught errors=["TypeError: Cannot read properties of null (reading 'split')"]
+I-26 [DEFECT] Lock a text card: storage contents, wrong/right PIN, unlock
+    → data=null: true; ciphertext present: true; full text in storage: false; plaintext name stored: "Meeting-Notizen Q4: Roadmap abstimmen, B…"; favorite flag kept; wrong PIN toast="Falscher PIN"; correct PIN preview=true
+I-27 [DEFECT] Create burn link; open it twice in separate browser contexts
+    → link length=152; fragment is plain base64 of the text ("Meeting-Notizen Q4: Road…"); opened in context 1: true, context 2: true
+I-28 [PASS] Add, rename (title / tab pencil / dropdown), duplicate, export, clear, delete, drag reorder
+    → add: 3; title rename: Umbenannt via Titel; pencil rename: Privat 2Privat; duplicate: 5 spaces; export: copyboard-space-Recherche-2026-10-21-20-43-20.json; tab drag reorder: true
+I-29 [OBSERVATION] Rename a space while the tab overflow dropdown is used on a narrow screen
+    → 2 of 3 tabs visible at 390px; others reachable via arrows/dropdown
+I-30 [DEFECT] Keyboard-only: can cards be focused and opened?
+    → cards with tabindex: 0; card buttons: 30; Enter on preview button opens preview=true; Shift+F10 context menu=false; context-menu rows are <div>s without keyboard navigation
+I-31 [DEFECT] Stored XSS: space name rendered via "In anderen Space kopieren" picker
+    → injected onerror handler executed: true
+I-32 [DEFECT] Stored XSS: imported space "color" rendered in the space context menu
+    → handler executed after opening the space context menu: true
+I-33 [PASS] File name / text content rendering in cards, preview, search
+    → handlers executed: [null,null]
+I-34 [PASS] Export full backup, modify board, re-import, restore pre-import recovery
+    → export="copyboard-backup-2026-10-21-20-43-28.json" (copyboard-backup v1); confirm="3 Spaces, 13 Karten, 1 Ordner · 26.5 KB · Export: 21.10.2026, 22:43:28. Der aktu…"; import restored card=true; recovery restored pre-import=true
+I-35 [BLOCKED] Start with a stored board of an unsupported (newer) schema version or corrupt JSON
+    → Harness error: Unterminated string in JSON at position 5000 (line 1 column 5001)
+I-36 [DEFECT] Real localStorage quota vs. the 20 MiB board limit
+    → Chromium localStorage capacity ≈ 5.24 M chars for one value; save failed after null images (~2 MB base64 each); status="Gespeichert um 22:43:34"; toast="Lokales Speicherlimit erreicht — lösche oder exportiere große Inhalte"; UI showed 2 cards, storage had 2; after reload 2 cards
+I-37 [PASS] AutoSave off: changes are temporary; leaving prompts
+    → status="Temporär ungespeichert"; persisted after reload=false; beforeunload dialogs=["beforeunload: "]
+I-38 [PASS] Confirmations off, default sort for new spaces, start space; settings export
+    → settings export download=copyboard-settings-2026-10-21.json error=[]; delete without confirm: true; new space sort=newest; start space after reload=sp_recherche
+I-39 [DEFECT] Command palette: content search, arrow keys, Enter opens result in folder
+    → hit="Aufgabenliste Alpha: 1) Interviews 2) Pr… | Recherche · Projekt Alpha" → folder opened=true; locked item searchable by its plaintext name: "Testzugang (Dummy): demo-user / demo-pas… | Recherche" → Enter: PIN prompt=false, preview=true
+I-40 [PASS] Stacked modals: Help → Storage → Esc → Esc; storage → preview child
+    → after 1st Esc storage=false help=true; after 2nd Esc help=false; preview from storage open=true over storage=true; Esc → preview=false storage=true
+I-41 [PASS] Copy text, image and PDF card to the system clipboard
+    → text ok=true; image clipboard types=image/png; pdf toast="Zwischenablage unterstützt diesen Typ nicht — nutze Herunterladen in der Vorschau"
+I-42 [DEFECT] Voice memo with a fake microphone
+    → card=undefined mime=undefined type=undefined size=undefinedB; <audio> in preview=false
+I-43 [PASS] OCR flow with a stubbed Tesseract (library not loaded from CDN)
+    → card created=true (stub); real Tesseract recognition (deu+eng, worker + language data from CDN) NOT VERIFIED
+I-44 [PASS] Palette extraction and image rotate/save + undo
+    → swatches=#18a878 #ff6060 #60a878 #c07860 #789078 #a89060; data length 19898→4194→undo 19898
+I-45 [PASS] Delete largest entry from storage manager
+    → largest before="skizze-verlauf.png", after="raster-test.png", storage modal open=true
+I-M01 [DEFECT] Tap a card on a 390 px touch viewport with the card near the bottom vs. centered
+    → 3/8 taps opened and immediately closed the overlay. t_notes@end: preview:open; t_notes@center: preview:open; i_grad@end: preview:open→preview:close; i_grad@center: preview:open; f_folder@end: folder:open→folder:close; f_folder@center: folder:open; f_pdf@end: preview:open→preview:close; f_pdf@center: preview:open
+I-M02 [DEFECT] Vertical swipe that starts on a card thumbnail vs. outside cards
+    → swipe on card thumbnail: scrollY 0→0 (no drag); swipe in grid gap: 0→301; swipe on drop zone: 0→301
+I-M03 [DEFECT] Multi-select and hover-only controls without a mouse
+    → select box opacity/pointer-events after tap=0.9/auto; inline edit trigger opacity=0; no long-press handler in code
+I-M04 [NOT VERIFIED] Long-press for context menu
+    → Code relies solely on the "contextmenu" event; iOS Safari does not fire it on long-press. CDP emulation cannot reproduce OS long-press behavior.
+I-M05 [PASS] Fixed bottom controls vs. content on mobile
+    → card action buttons covered by fixed controls at scroll 0%/50%/100%: 0/0/0
+I-V01 [DEFECT] Favorite badge position vs. delete button
+    → element at lower-right corner of the delete button: favorite badge
+I-33b [DEFECT] Imported file item whose data is a javascript: URL, then "Herunterladen"
+    → item accepted by import validation=true; script executed on "Herunterladen"=true
+I-C01 [PASS] Supabase library unavailable (CDN blocked) → local-first behavior
+    → toggle state=error; sign-in message="Der Kontodienst ist gerade nicht verfügbar. CopyBoard kann weiterhin lokal verwendet werden."
+I-C02 [DEFECT] Initial upload; then only viewing a card and switching spaces
+    → revision after sign-in=1; after opening a preview=2; after switching space=3; full-snapshot uploads=3
+I-C03 [DEFECT] Two devices: second device first sign-in, concurrent edits, dismiss, reload
+    → B first sign-in banner=true; B load confirm=true; B local-only card kept after load=false; rev=2; B banner=true; B status="Neue Elemente auf einem anderen Gerät verfügbar"; after dismiss+edit B uploaded=2 publish calls total; banner again=true; after B "Aktualisieren": B edits kept=false; single recovery slot present=true
+I-C04 [OBSERVATION] Sign out, then a different account signs in on the same browser profile
+    → local items kept after sign-out=14; same browser profile, next account signs in → previous local board uploaded to that account's cloud=true
+I-C05 [DEFECT] Remote snapshot is applied while the "Inhalt bearbeiten" dialog is open on another device
+    → remote applied silently while dialog open=true; dialog still open=true; after "Ablegen": edit in local state=false; edit in cloud=false; toast="Gespeichert"
+written <local>/evidence/qa-results.json

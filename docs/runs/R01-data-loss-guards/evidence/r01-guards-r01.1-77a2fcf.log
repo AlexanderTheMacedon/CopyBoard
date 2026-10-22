@@ -1,0 +1,55 @@
+A1 [PASS] Gespeicherter State: schemaVersion:2 — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true "Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt."; Paste abgelehnt=true (Toast "Speichern gesperrt — neue Inhalte werden nicht angenommen"); Export=Original: true (27170 Zeichen); Status="Speichern gesperrt"; Cloud-Operationen=0 (Schreibend 0)
+A2 [PASS] Gespeicherter State: abgeschnittenes JSON — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true "Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt."; Paste abgelehnt=true (Toast "Speichern gesperrt — neue Inhalte werden nicht angenommen"); Export=Original: true (5000 Zeichen); Status="Speichern gesperrt"; Cloud-Operationen=0 (Schreibend 0)
+A2b [PASS] Gespeicherter State: settings.schemaVersion:2 — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true "Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt."; Paste abgelehnt=true (Toast "Speichern gesperrt — neue Inhalte werden nicht angenommen"); Export=Original: true (27170 Zeichen); Status="Speichern gesperrt"; Cloud-Operationen=0 (Schreibend 0)
+A2c [PASS] Gespeicherter State: JSON-Array statt Objekt — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=true, 5s=true, Reload=true; Hinweis=true/true "Gespeicherte Daten konnten nicht gelesen werden. Sie bleiben unverändert, Speichern ist gesperrt."; Paste abgelehnt=true (Toast "Speichern gesperrt — neue Inhalte werden nicht angenommen"); Export=Original: true (7 Zeichen); Status="Speichern gesperrt"; Cloud-Operationen=0 (Schreibend 0)
+A3 [PASS] Rausch-PNGs bis zur Grenze: Ablehnung vor dem Fehlschlag, Kartenzahl UI = gespeichert = nach Reload
+    → #1: Karten 1, Status "Gespeichert um 23:09:33", Toast ""; #2: Karten 2, Status "Gespeichert um 23:09:34", Toast ""; #3: Karten 2, Status "Gespeichert um 23:09:34", Toast "Lokales Speicherlimit erreicht — lösche oder exportiere große Inhalte"; #4: Karten 2, Status "Gespeichert um 23:09:34", Toast "Lokales Speicherlimit erreicht — lösche oder exportiere große Inhalte"; abgelehnt bei Bild 3; Speichern je fehlgeschlagen=false; UI=2, gespeichert=2 (3924041 Zeichen), nach Reload=2
+A3b [PASS] Echter Quota-Fehler (Speicher künstlich verknappt): dauerhafter Hinweis, kein "Gespeichert", Erfassung gesperrt, RAM-Export rettet
+    → Hinweis=true "Nicht gespeichert: Der Browser-Speicher ist voll. Lösche große Inhalte oder exportiere ein Backup."; Status="Speichern fehlgeschlagen"; gespeicherter Stand unverändert=true; UI-Karten=2; Paste abgelehnt=true (Toast "Speicher voll — zuerst Inhalte löschen oder ein Backup exportieren"); RAM-Backup Karten=2 (Format copyboard-backup v1); Verlassen-Warnung=true
+A4 [PASS] Wie A3b, dann gespeicherte Karte löschen: verifizierter Save hebt Sperre auf, Erfassung wieder möglich
+    → Hinweis nach Löschen=false; Status="Gespeichert um 23:09:40"; gespeichert: zuvor ungespeichertes Bild übernommen=true; neuer Paste gespeichert=true; UI=2, nach Reload=2
+S1 [PASS] Schreiben von copyboard_autosave_last_saved scheitert, State-Write gelingt
+    → State gespeichert=true; Status="Gespeichert um 23:09:43"; Sperr-Hinweis=false
+A5 [PASS] Board mit 3,3 M Zeichen, Backup-Import, Recovery-Kopie passt nicht in den Speicher
+    → Board 3301172 Zeichen; nach Import byte-identisch=true; UI zeigt alten Stand=true; Recovery-Key vorhanden=false; Toast="Import abgebrochen: Sicherung konnte nicht angelegt werden. Exportiere zuerst ein Backup."
+A5b [PASS] Manuelles "Aktualisieren" bei lokalen Änderungen, Recovery-Kopie passt nicht
+    → Update-Banner=true; lokal byte-identisch=true; lokale Änderung erhalten=true; Toast="Laden abgebrochen: Sicherung konnte nicht angelegt werden. Exportiere zuerst ein Backup."; Cloud-Revision=2; Cloud-Schreibops danach=[]
+A6 [PASS] Mock-Snapshot 6,3 M Zeichen, leeres Gerät, danach Reload
+    → Status Start="error / Cloud-Stand ist zu groß für den lokalen Speicher dieses Browsers"; nach Reload="error / Cloud-Stand ist zu groß für den lokalen Speicher dieses Browsers"; lokale Cloud-Meta=null; lokaler State 425 Zeichen; Backend-Revision=1; Originalobjekt vorhanden=true; Cloud-Schreibops=[]
+A6b [PASS] Synchronisiertes Gerät, neuer Cloud-Stand (3 M) passt nicht in den verknappten Speicher → Rollback
+    → vor Reload {"localSame":true,"metaSame":true,"ui":true,"banner":false,"st":"error / Cloud-Stand konnte lokal nicht gespeichert werden — vorheriger Stand bleibt aktiv"}; nach Reload {"localSame":true,"metaSame":true,"ui":true,"banner":false,"st":"error / Cloud-Stand konnte lokal nicht gespeichert werden — vorheriger Stand bleibt aktiv"}; Backend-Revision=2; Objekt rev2 vorhanden=true; Cloud-Schreibops=[]; Füller=4515296 Zeichen
+A7 [PASS] Gescheiterter Save, dann "Jetzt synchronisieren"
+    → Autosave-Status="Speichern fehlgeschlagen"; Sperr-Hinweis=true; Revision 1→1; Cloud-Schreibops=[]; Sync-Status="Lokale Änderungen nicht gespeichert – Upload angehalten"
+A8 [PASS] Zwei Tabs, sequenziell: Tab A speichert, dann Paste im veralteten Tab B; danach Neu laden
+    → B gesperrt nach Write von A=true "In einem anderen Tab geändert. Neu laden, um weiterzuarbeiten."; Karte A erhalten=true; veralteter Paste in B abgelehnt=true; B nach Neu laden sieht A und ist frei=true; A gesperrt nach Write von B=true; final beide Karten gespeichert=true; A zeigt nach Reload 2 Karten
+A8r [RISK] Zwei Tabs, gleichzeitig (5 Durchläufe): echte Schreibrennen
+    → #1: gespeichert A/B=true/false, gesperrt A/B=true/true; #2: gespeichert A/B=false/true, gesperrt A/B=true/true; #3: gespeichert A/B=true/false, gesperrt A/B=true/true; #4: gespeichert A/B=true/false, gesperrt A/B=true/true; #5: gespeichert A/B=true/false, gesperrt A/B=true/true; Durchläufe mit nicht gespeicherter Karte: 5/5
+E1 [PASS] Bearbeitung während Quota-Sperre: Text (Dialog) — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Text übernommen · Speichern fehlgeschlagen"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E2 [PASS] Bearbeitung während Quota-Sperre: Text (inline) — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Text übernommen · Speichern fehlgeschlagen"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E3 [PASS] Bearbeitung während Quota-Sperre: Bild drehen — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Bild übernommen · Speichern fehlgeschlagen"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E4 [PASS] Bearbeitung während Quota-Sperre: Datei ersetzen — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Datei übernommen · Speichern fehlgeschlagen"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E5 [PASS] Bearbeitung während Quota-Sperre: Sticky Note — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Sticky Note übernommen · Speichern fehlgeschlagen"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E5b [PASS] Bearbeitung während Quota-Sperre: Standardsortierung — kein "gespeichert", Stand unverändert, RAM behält Änderung
+    → Sperre vorher=true; Toast="Standardsortierung übernommen · Speichern fehlgeschlagen"; gespeichert byte-identisch=true; Hinweis danach=true; Status="Speichern fehlgeschlagen"; Änderung im RAM-Backup=true
+E6 [PASS] Zwei Tabs sequenziell: Bearbeitung im gesperrten Tab B meldet "Speichern gesperrt" und überschreibt nichts
+    → B gesperrt=true; Toast="Text übernommen · Speichern gesperrt"; Stand von A byte-identisch=true
+E7 [PASS] setItem verwirft den State-Write still (kein Fehler): Read-back erkennt es, Bearbeitung meldet kein "gespeichert"
+    → Toast="Text übernommen · Speichern fehlgeschlagen"; gespeichert unverändert=true; Status="Speichern fehlgeschlagen"; Hinweis=true
+E8 [PASS] Normale Bearbeitung: "gespeichert" erscheint erst, wenn der Write schon verifiziert im Speicher steht
+    → dialogText: "Text gespeichert", bereits gespeichert=true; inlineText: "Text gespeichert", bereits gespeichert=true; image: "Bild gespeichert", bereits gespeichert=true; stickyNote: "Sticky Note gespeichert", bereits gespeichert=true
+E9 [PASS] AutoSave aus, Text bearbeiten: Toast nennt "nicht gespeichert", localStorage unverändert
+    → Toast="Text übernommen · Temporärer Modus, nicht gespeichert"; gespeichert unverändert=true
+E10 [PASS] Cloud-Stand wird angewendet, während der Bearbeiten-Dialog offen ist: kein "gespeichert" für die verlorene Änderung
+    → Remote angewendet bei offenem Dialog=true; Änderung gespeichert=false; Toast="Text nicht übernommen · Karte wurde inzwischen ersetzt"
+A10 [PASS] node --check für alle Module
+    → src/js/app.js: ok; src/js/config/constants.js: ok; src/js/ui/toast.js: ok; src/js/utils/files.js: ok; src/js/utils/format.js: ok
+written <local>/evidence/r01-results-r01.1-77a2fcf.json

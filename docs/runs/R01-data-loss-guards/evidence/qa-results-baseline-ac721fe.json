@@ -1,0 +1,620 @@
+{
+  "generatedAt": "2026-10-21T20:19:09.556Z",
+  "base": "http://127.0.0.1:8765/",
+  "browser": "Chromium (Playwright 1.56.1, headless)",
+  "results": [
+    {
+      "id": "I-01",
+      "area": "Clipboard",
+      "action": "Ctrl/Cmd+V text with focus on board body",
+      "expected": "One text card created and persisted",
+      "observed": "1 card(s) in active space; name=\"Audit Einfüge-Test 1\"",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 863
+    },
+    {
+      "id": "I-02",
+      "area": "Clipboard",
+      "action": "Paste while focus is in unrelated text inputs (palette search, sticky note, cloud e-mail, PIN, inline editor; folder title as control)",
+      "expected": "Pasting into a text field only edits that field; no card is created",
+      "observed": "Command palette search: NEW CARD CREATED; Sticky note input: NEW CARD CREATED; Cloud e-mail field: NEW CARD CREATED; PIN input: NEW CARD CREATED; Inline text editor: NEW CARD CREATED; Folder title (control: excluded by code): no card",
+      "status": "DEFECT",
+      "severity": "High",
+      "note": "Synthetic ClipboardEvent: the browser default insertion is not executed for synthetic events, so only the app-level side effect is measured.",
+      "ms": 7272
+    },
+    {
+      "id": "I-03",
+      "area": "Clipboard",
+      "action": "\"Zwischenablage\" button pre-fills modal from system clipboard, \"Ablegen\" creates card",
+      "expected": "Textarea pre-filled from clipboard; card created on confirm",
+      "observed": "textarea=\"Aus der Systemzwischenablage\", cards=1",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 1151
+    },
+    {
+      "id": "I-04",
+      "area": "Files",
+      "action": "File picker: PNG + TXT + PDF, then an 8 MiB+1 file",
+      "expected": "3 cards (image,file,file); oversize file rejected with message",
+      "observed": "types=[file,file,image] → after oversize: 3 cards, toast=\"\"gross.bin\" ist zu groß (max. 8.0 MB)\"",
+      "status": "PASS",
+      "severity": "—",
+      "note": "A .txt file becomes type \"file\" (not a text card); text files are not previewed as text.",
+      "ms": 2449
+    },
+    {
+      "id": "I-05",
+      "area": "Duplicates",
+      "action": "Paste text that already exists in another space → \"Vorhandenes zeigen\"",
+      "expected": "Dialog shown; existing item located (space switch + preview); nothing added",
+      "observed": "active=sp_privat, preview=true, items=14",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 1137
+    },
+    {
+      "id": "I-06",
+      "area": "Duplicates",
+      "action": "Upload two files at once that are both duplicates of existing items",
+      "expected": "Each duplicate is asked for (or both handled together); \"add anyway\" adds both",
+      "observed": "dialog listed: \"b.txt Dein CopyBoard\"; after \"Trotzdem ablegen\": cards=3, second dialog=false",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "pendingDuplicateItem is a single slot; the second duplicate overwrites the first while the loop in ingestFiles() continues.",
+      "ms": 2421
+    },
+    {
+      "id": "I-07",
+      "area": "Cards",
+      "action": "Click card → preview; Escape closes; focus returns",
+      "expected": "Preview shows content; Escape closes it",
+      "observed": "preview=\"Meeting-Notizen Q4: Roadmap ab…\", open after Esc=false, focus=BODY#",
+      "status": "PASS",
+      "severity": "—",
+      "note": "Cards are <div>s without tabindex; focus cannot return to the originating card (see I-30).",
+      "ms": 870
+    },
+    {
+      "id": "I-08",
+      "area": "Cards",
+      "action": "Double-click a card",
+      "expected": "No dedicated double-click action exists; should not produce side effects",
+      "observed": "preview open=true; each click of the double-click calls openPreview() (second call re-renders the same preview)",
+      "status": "OBSERVATION",
+      "severity": "Info",
+      "ms": 1071
+    },
+    {
+      "id": "I-09",
+      "area": "Context menu",
+      "action": "Right-click opens; Escape / outside click close; submenu via hover and click; viewport clamping",
+      "expected": "Menus open/close predictably and stay within the viewport",
+      "observed": "Esc closes: true; outside click closes: true; submenu on hover: true; menu at corner fits viewport: true (show=true)",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 725
+    },
+    {
+      "id": "I-10",
+      "area": "Context menu",
+      "action": "Escape with a card context menu open inside an open folder",
+      "expected": "First Escape closes only the context menu; folder stays open",
+      "observed": "context menu visible=true, folder open=false",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "The capture-phase modal Escape handler calls stopImmediatePropagation(), so the bubble-phase hideContextMenu() never runs while any modal is open.",
+      "ms": 1022
+    },
+    {
+      "id": "I-11",
+      "area": "Inline edit",
+      "action": "Inline text edit: 4 flows (top level / inside folder × typing directly / clicking into the editor first), then Escape and one click elsewhere",
+      "expected": "Clicking inside the editor only places the caret; Escape discards the edit and closes nothing else",
+      "observed": "[top level, type directly]; after Esc overlays=none, editor still mounted=false; discarded text saved after next click=false | [top level, click into editor] → click into editor opened: previewOverlay; after Esc overlays=none, editor still mounted=true; discarded text saved after next click=true | [folder, type directly]; after Esc overlays=none, editor still mounted=true; discarded text saved after next click=true | [folder, click into editor] → click into editor opened: folderOverlay+previewOverlay; after Esc overlays=folderOverlay, editor still mounted=true; discarded text saved after next click=true",
+      "status": "DEFECT",
+      "severity": "High",
+      "note": "(1) The editor lives inside .thumb, whose press handler opens the preview on any click; (2) inside a folder the capture-phase modal Escape handler closes the folder first; the orphaned edit session keeps its document pointerdown handler and commits on the next pointerdown. Ctrl/⌘+Enter save and Undo were verified separately (I-14 family).",
+      "ms": 8406
+    },
+    {
+      "id": "I-12",
+      "area": "Inline edit",
+      "action": "Inline edit: Ctrl+Enter saves, Ctrl+Z restores",
+      "expected": "Saved and undoable",
+      "observed": "saved=true, undone=true",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 1842
+    },
+    {
+      "id": "I-13",
+      "area": "Quick look",
+      "action": "Hover + Space bar on a normal card and on a PIN-locked card",
+      "expected": "Normal card previews; locked card asks for PIN",
+      "observed": "normal preview=true; locked: PIN prompt=false, preview opened=true (body html length 11)",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "Content stays encrypted (no plaintext disclosure), but the lock flow is bypassed and an empty preview with copy/edit actions on a null payload is shown.",
+      "ms": 1560
+    },
+    {
+      "id": "I-14",
+      "area": "Undo/Redo",
+      "action": "Ctrl+Z after each mutation type, then Ctrl+Shift+Z",
+      "expected": "Each user-visible mutation is undoable and redoable in one step",
+      "observed": "delete card: undo=ok, redo=ok; rename card: undo=ok, redo=ok; toggle favorite: undo=ok, redo=ok; pin card: undo=ok, redo=ok; move to other space: undo=ok, redo=ok; delete space: undo=ok, redo=ok; sort mode change: undo=ok, redo=ok; space color: undo=ok, redo=ok; sticky note add: undo=ok, redo=ok; dissolve folder: undo=ok, redo=ok; clear space: undo=ok, redo=ok; settings reset: undo=FAIL, redo=ok",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "ms": 24052
+    },
+    {
+      "id": "I-15",
+      "area": "Undo/Redo",
+      "action": "Undo after switching to another space",
+      "expected": "Undo either switches back to the affected space or makes the restored change visible",
+      "observed": "active space=sp_privat; card restored in Recherche=true; toast=\"Rückgängig gemacht\"; no visible change in current space",
+      "status": "OBSERVATION",
+      "severity": "Low",
+      "ms": 1895
+    },
+    {
+      "id": "I-16",
+      "area": "Undo/Redo",
+      "action": "Drag a selected stack of 2 cards onto another space tab, then one Ctrl+Z",
+      "expected": "One user action = one undo step",
+      "observed": "moved=2; after 1×Undo restored=1/2; after 2×Undo restored=2/2",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "startCardDrag() calls moveItemToSpace() per item without skipHistory → one full-board snapshot per item.",
+      "ms": 3451
+    },
+    {
+      "id": "I-17",
+      "area": "Undo/Redo",
+      "action": "Undo directly after a full board import",
+      "expected": "Import is either undoable as one step or clears history; no hidden orphan data",
+      "observed": "spaces after undo=[Importiert]; orphan data keys=[sp_recherche] (persisted but unreachable)",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "Undo/redo stacks are not cleared on import or on cloud snapshot apply; normalizeState() preserves unknown data keys.",
+      "ms": 2471
+    },
+    {
+      "id": "I-18",
+      "area": "Undo/Redo",
+      "action": "Undo history after reload",
+      "expected": "(Design) history is session-only",
+      "observed": "toast after reload+undo=\"Nichts zum Rückgängigmachen\"",
+      "status": "OBSERVATION",
+      "severity": "Info",
+      "ms": 2160
+    },
+    {
+      "id": "I-19",
+      "area": "Drag & drop",
+      "action": "Drag card onto another card → folder; drag reorder; drag onto another space tab",
+      "expected": "All three drag outcomes work with a mouse",
+      "observed": "merge→folder: f_csv+t_code; reorder changed order: true; to tab moved: true",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 3556
+    },
+    {
+      "id": "I-20",
+      "area": "Drag & drop",
+      "action": "Drag reorder while sort mode is not manual",
+      "expected": "Manual insertion paused, user informed",
+      "observed": "drag hint=\"Sortierung aktiv: In Ordner oder Space verschieben möglich; manuelles Einordnen ist pausiert\"; visual order unchanged=true",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 1555
+    },
+    {
+      "id": "I-21",
+      "area": "Drag & drop",
+      "action": "Drag a card out to desktop (DownloadURL)",
+      "expected": "Chrome/Edge: drag-out creates a file",
+      "observed": "Requires OS-level drag target; not automatable in headless Chromium",
+      "status": "NOT VERIFIED",
+      "severity": "—",
+      "ms": 0
+    },
+    {
+      "id": "I-22",
+      "area": "Selection",
+      "action": "Select two folders and choose \"In Ordner\"",
+      "expected": "Folders are not nested (no nested-folder UI exists) or nesting is fully supported",
+      "observed": "folder nested in folder=true; after deleting outer folder, unreachable items still stored: [t_code,f_csv]",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "ms": 1865
+    },
+    {
+      "id": "I-23",
+      "area": "Selection",
+      "action": "Shift-click range, \"Alle auswählen\", selection bar actions (duplicate, delete)",
+      "expected": "Range and select-all work; duplicate adds one card",
+      "observed": "range=\"5 ausgewählt\", all=\"9 ausgewählt\", items after duplicate=10 (was 9)",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 1695
+    },
+    {
+      "id": "I-24",
+      "area": "Folders",
+      "action": "Folder header actions: rename via title, ZIP download, child delete button, dissolve",
+      "expected": "Folder header and card-button operations work",
+      "observed": "rename persisted: true; zip download: Alpha neu.zip; child deleted: true, folder still open=true; dissolved (no confirmation): true",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 2132
+    },
+    {
+      "id": "I-46",
+      "area": "Context menu",
+      "action": "Use a card context menu inside an open folder",
+      "expected": "Menu above the folder; all rows clickable",
+      "observed": "z-index 90 vs overlay 100; 8/8 rows covered by the folder overlay; clicking \"Umbenennen\" instead hit the backdrop → open overlays now: folderOverlay; evidence screenshots/desktop-35-folder-context-menu-behind-overlay.png",
+      "status": "DEFECT",
+      "severity": "High",
+      "note": ".context-menu has z-index 90; the modal stack forces overlays to z-index ≥100 !important. Every child-only action (Aus Ordner entfernen, Umbenennen, Details, Teilen, OCR, PIN, Burn link…) is unreachable for cards inside folders; only the three card buttons work.",
+      "ms": 1368
+    },
+    {
+      "id": "I-25",
+      "area": "Folders",
+      "action": "ZIP download of a folder that contains a PIN-locked image (lock seeded; the in-folder menu is unusable, see I-46)",
+      "expected": "ZIP created (locked item skipped or exported encrypted) or a clear message",
+      "observed": "download=none; toast=\"ZIP wird erstellt…\"; uncaught errors=[\"TypeError: Cannot read properties of null (reading 'split')\"]",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "buildFolderZipBlob() calls it.data.split() on locked items whose data is null. Note encryptItemWithPin() keeps item.type unchanged.",
+      "ms": 4948
+    },
+    {
+      "id": "I-26",
+      "area": "PIN lock",
+      "action": "Lock a text card: storage contents, wrong/right PIN, unlock",
+      "expected": "Content and identifying metadata encrypted; correct PIN reveals, wrong PIN rejected",
+      "observed": "data=null: true; ciphertext present: true; full text in storage: false; plaintext name stored: \"Meeting-Notizen Q4: Roadmap abstimmen, B…\"; favorite flag kept; wrong PIN toast=\"Falscher PIN\"; correct PIN preview=true",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "Auto-generated names of text cards are the first 40 characters of the content and remain readable (UI, search, backups, cloud snapshot). PIN length is not enforced (1+ characters); PBKDF2 150k iterations does not protect 4-digit PINs against offline brute force.",
+      "ms": 5581
+    },
+    {
+      "id": "I-27",
+      "area": "Burn after reading",
+      "action": "Create burn link; open it twice in separate browser contexts",
+      "expected": "Link content is protected and can be read only once",
+      "observed": "link length=152; fragment is plain base64 of the text (\"Meeting-Notizen Q4: Road…\"); opened in context 1: true, context 2: true",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "No server, no key, no one-time token: \"burn\" only strips the hash from the address bar of the opening tab. Anyone with the link can read it any number of times.",
+      "ms": 1776
+    },
+    {
+      "id": "I-28",
+      "area": "Spaces",
+      "action": "Add, rename (title / tab pencil / dropdown), duplicate, export, clear, delete, drag reorder",
+      "expected": "All space operations work",
+      "observed": "add: 3; title rename: Umbenannt via Titel; pencil rename: Privat 2Privat; duplicate: 5 spaces; export: copyboard-space-Recherche-2026-10-21-20-17-37.json; tab drag reorder: true",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 3376
+    },
+    {
+      "id": "I-29",
+      "area": "Spaces",
+      "action": "Rename a space while the tab overflow dropdown is used on a narrow screen",
+      "expected": "Spaces discoverable on mobile",
+      "observed": "2 of 3 tabs visible at 390px; others reachable via arrows/dropdown",
+      "status": "OBSERVATION",
+      "severity": "Low",
+      "ms": 366
+    },
+    {
+      "id": "I-30",
+      "area": "Accessibility",
+      "action": "Keyboard-only: can cards be focused and opened?",
+      "expected": "All card functions reachable by keyboard",
+      "observed": "cards with tabindex: 0; card buttons: 30; Enter on preview button opens preview=true; Shift+F10 context menu=false; context-menu rows are <div>s without keyboard navigation",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "ms": 1185
+    },
+    {
+      "id": "I-31",
+      "area": "Security",
+      "action": "Stored XSS: space name rendered via \"In anderen Space kopieren\" picker",
+      "expected": "Space name rendered as text",
+      "observed": "injected onerror handler executed: true",
+      "status": "DEFECT",
+      "severity": "High",
+      "note": "renderContextRows() writes r.label via innerHTML; openSpacePicker() passes raw space names. Names also arrive via JSON import and cloud snapshots (cross-device / shared-file vector).",
+      "ms": 1967
+    },
+    {
+      "id": "I-32",
+      "area": "Security",
+      "action": "Stored XSS: imported space \"color\" rendered in the space context menu",
+      "expected": "Imported color validated as a hex value",
+      "observed": "handler executed after opening the space context menu: true",
+      "status": "DEFECT",
+      "severity": "High",
+      "ms": 1582
+    },
+    {
+      "id": "I-33",
+      "area": "Security",
+      "action": "File name / text content rendering in cards, preview, search",
+      "expected": "User text never interpreted as HTML",
+      "observed": "handlers executed: [null,null]",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 1718
+    },
+    {
+      "id": "I-34",
+      "area": "Backup",
+      "action": "Export full backup, modify board, re-import, restore pre-import recovery",
+      "expected": "Round trip restores; recovery returns to pre-import state",
+      "observed": "export=\"copyboard-backup-2026-10-21-20-17-46.json\" (copyboard-backup v1); confirm=\"3 Spaces, 13 Karten, 1 Ordner · 26.5 KB · Export: 21.10.2026, 22:17:46. Der aktu…\"; import restored card=true; recovery restored pre-import=true",
+      "status": "PASS",
+      "severity": "—",
+      "note": "Backup/import is only reachable through the command palette (no visible menu entry).",
+      "ms": 2818
+    },
+    {
+      "id": "I-35",
+      "area": "Persistence",
+      "action": "Start with a stored board of an unsupported (newer) schema version or corrupt JSON",
+      "expected": "Unreadable data is kept (or quarantined) and the user is warned",
+      "observed": "future schemaVersion 2: original preserved=false; now stored=\"Dein CopyBoard\"; truncated JSON: original preserved=false; now stored=\"Dein CopyBoard\"",
+      "status": "DEFECT",
+      "severity": "Critical",
+      "note": "init() falls back to defaultState() and immediately calls persistState({immediate:true}), overwriting STORAGE_KEY without warning or backup.",
+      "ms": 1740
+    },
+    {
+      "id": "I-36",
+      "area": "Persistence",
+      "action": "Real localStorage quota vs. the 20 MiB board limit",
+      "expected": "Configured limit matches what the browser can actually persist; user cannot silently lose work",
+      "observed": "Chromium localStorage capacity ≈ 5.24 M chars for one value; save failed after 3 images (~2 MB base64 each); status=\"Speichern fehlgeschlagen\"; toast=\"Konnte nicht gespeichert werden (Speicherlimit erreicht?)\"; UI showed 3 cards, storage had 2; after reload 2 cards",
+      "status": "DEFECT",
+      "severity": "High",
+      "note": "MAX_TOTAL_BYTES (20 MiB) exceeds typical per-origin localStorage capacity (~5 M UTF-16 chars in Chromium); base64 adds ~33 %. The board keeps accepting items after the first failed save.",
+      "ms": 3672
+    },
+    {
+      "id": "I-37",
+      "area": "Persistence",
+      "action": "AutoSave off: changes are temporary; leaving prompts",
+      "expected": "Temporary mode does not persist; status communicates it",
+      "observed": "status=\"Temporär ungespeichert\"; persisted after reload=false; beforeunload dialogs=[\"beforeunload: \"]",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 9733
+    },
+    {
+      "id": "I-38",
+      "area": "Settings",
+      "action": "Confirmations off, default sort for new spaces, start space; settings export",
+      "expected": "Settings take effect and persist; settings export downloads a file",
+      "observed": "settings export download=none error=[\"ReferenceError: downloadBlob is not defined\"]; delete without confirm: true; new space sort=newest; start space after reload=sp_recherche",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "exportBoardSettings() calls downloadBlob(), which is not defined anywhere in the code base (also absent in V34 commit 4cc325d).",
+      "ms": 4845
+    },
+    {
+      "id": "I-39",
+      "area": "Search",
+      "action": "Command palette: content search, arrow keys, Enter opens result in folder",
+      "expected": "Search finds content in folders; locked items require PIN",
+      "observed": "hit=\"Aufgabenliste Alpha: 1) Interviews 2) Pr… | Recherche · Projekt Alpha\" → folder opened=true; locked item searchable by its plaintext name: \"Testzugang (Dummy): demo-user / demo-pas… | Recherche\" → Enter: PIN prompt=false, preview=true",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "ms": 2167
+    },
+    {
+      "id": "I-40",
+      "area": "Modals",
+      "action": "Stacked modals: Help → Storage → Esc → Esc; storage → preview child",
+      "expected": "Escape closes only the top-most layer",
+      "observed": "after 1st Esc storage=false help=true; after 2nd Esc help=false; preview from storage open=true over storage=true; Esc → preview=false storage=true",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 1520
+    },
+    {
+      "id": "I-41",
+      "area": "Copy",
+      "action": "Copy text, image and PDF card to the system clipboard",
+      "expected": "Text and image copied; unsupported types explained",
+      "observed": "text ok=true; image clipboard types=image/png; pdf toast=\"Zwischenablage unterstützt diesen Typ nicht — nutze Herunterladen in der Vorschau\"",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 1916
+    },
+    {
+      "id": "I-42",
+      "area": "Media",
+      "action": "Voice memo with a fake microphone",
+      "expected": "Recording stored as audio card and playable in preview",
+      "observed": "card=undefined mime=undefined type=undefined size=undefinedB; <audio> in preview=false",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "Chromium fake device only. Safari (MediaRecorder default audio/mp4 while the app labels the blob audio/webm), permissions UX and max duration are NOT VERIFIED.",
+      "ms": 3162
+    },
+    {
+      "id": "I-43",
+      "area": "OCR",
+      "action": "OCR flow with a stubbed Tesseract (library not loaded from CDN)",
+      "expected": "Recognized text added as card",
+      "observed": "card created=true (stub); real Tesseract recognition (deu+eng, worker + language data from CDN) NOT VERIFIED",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 1574
+    },
+    {
+      "id": "I-44",
+      "area": "Image tools",
+      "action": "Palette extraction and image rotate/save + undo",
+      "expected": "Swatches shown; rotation persisted; undo restores",
+      "observed": "swatches=#18a878 #ff6060 #60a878 #c07860 #789078 #a89060; data length 19898→4194→undo 19898",
+      "status": "PASS",
+      "severity": "—",
+      "note": "imageEditSave and replaceFileInput never call persistState() themselves; persistence currently happens only as a side effect of markRecent().",
+      "ms": 1861
+    },
+    {
+      "id": "I-45",
+      "area": "Storage manager",
+      "action": "Delete largest entry from storage manager",
+      "expected": "Entry deleted and list refreshed",
+      "observed": "largest before=\"skizze-verlauf.png\", after=\"raster-test.png\", storage modal open=true",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 951
+    },
+    {
+      "id": "I-M01",
+      "area": "Touch",
+      "action": "Tap a card on a 390 px touch viewport with the card near the bottom vs. centered",
+      "expected": "A tap opens the preview/folder and it stays open",
+      "observed": "3/8 taps opened and immediately closed the overlay. t_notes@end: preview:open; t_notes@center: preview:open; i_grad@end: preview:open→preview:close; i_grad@center: preview:open; f_folder@end: folder:open→folder:close; f_folder@center: folder:open; f_pdf@end: preview:open→preview:close; f_pdf@center: preview:open",
+      "status": "DEFECT",
+      "severity": "High",
+      "note": "Touch tap: pointerup opens the overlay synchronously, then the browser-generated compatibility click is hit-tested against the new overlay; when it lands on the backdrop, the capture-phase backdrop handler closes it. Outcome depends on where the card is relative to the dialog box.",
+      "ms": 9490
+    },
+    {
+      "id": "I-M02",
+      "area": "Touch",
+      "action": "Vertical swipe that starts on a card thumbnail vs. outside cards",
+      "expected": "Swiping on content scrolls the page",
+      "observed": "swipe on card thumbnail: scrollY 0→0 (no drag); swipe in grid gap: 0→301; swipe on drop zone: 0→301",
+      "status": "DEFECT",
+      "severity": "High",
+      "note": ".thumb has touch-action:none and pointerdown starts a card drag after 6 px. Synthesized touch scroll gesture (CDP) in Chromium mobile emulation; confirm on real iOS/Android hardware.",
+      "ms": 4166
+    },
+    {
+      "id": "I-M03",
+      "area": "Touch",
+      "action": "Multi-select and hover-only controls without a mouse",
+      "expected": "Selection, drag handle and inline edit reachable on touch",
+      "observed": "select box opacity/pointer-events after tap=0.9/auto; inline edit trigger opacity=0; no long-press handler in code",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "Controls are revealed only via :hover. Emulated (no real-device verification).",
+      "ms": 724
+    },
+    {
+      "id": "I-M04",
+      "area": "Touch",
+      "action": "Long-press for context menu",
+      "expected": "Context actions (move, OCR, PIN, share…) reachable on touch",
+      "observed": "Code relies solely on the \"contextmenu\" event; iOS Safari does not fire it on long-press. CDP emulation cannot reproduce OS long-press behavior.",
+      "status": "NOT VERIFIED",
+      "severity": "—",
+      "ms": 0
+    },
+    {
+      "id": "I-M05",
+      "area": "Layout",
+      "action": "Fixed bottom controls vs. content on mobile",
+      "expected": "Card action buttons not covered by floating controls",
+      "observed": "card action buttons covered by fixed controls at scroll 0%/50%/100%: 0/0/0",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 968
+    },
+    {
+      "id": "I-V01",
+      "area": "Visual",
+      "action": "Favorite badge position vs. delete button",
+      "expected": "Status badges never cover action buttons",
+      "observed": "element at lower-right corner of the delete button: favorite badge",
+      "status": "DEFECT",
+      "severity": "Low",
+      "ms": 368
+    },
+    {
+      "id": "I-33b",
+      "area": "Security",
+      "action": "Imported file item whose data is a javascript: URL, then \"Herunterladen\"",
+      "expected": "Import validates item data as data: URLs; downloads never navigate",
+      "observed": "item accepted by import validation=true; script executed on \"Herunterladen\"=true",
+      "status": "DEFECT",
+      "severity": "High",
+      "note": "isValidBoardState()/normalizeItem() check structure only; item.data is used as <a href>, <img src>, <audio src> and fetch() input.",
+      "ms": 2165
+    },
+    {
+      "id": "I-C01",
+      "area": "Cloud (sandbox)",
+      "action": "Supabase library unavailable (CDN blocked) → local-first behavior",
+      "expected": "App works locally; clear message",
+      "observed": "toggle state=error; sign-in message=\"Der Kontodienst ist gerade nicht verfügbar. CopyBoard kann weiterhin lokal verwendet werden.\"",
+      "status": "PASS",
+      "severity": "—",
+      "ms": 849
+    },
+    {
+      "id": "I-C02",
+      "area": "Cloud (mock)",
+      "action": "Initial upload; then only viewing a card and switching spaces",
+      "expected": "Read-only activity does not create cloud revisions",
+      "observed": "revision after sign-in=1; after opening a preview=2; after switching space=3; full-snapshot uploads=3",
+      "status": "DEFECT",
+      "severity": "Medium",
+      "note": "recentItems and activeSpaceId are part of the hashed snapshot; every view/space switch uploads the whole board (up to 20 MiB) and can create cross-device conflicts.",
+      "ms": 4965
+    },
+    {
+      "id": "I-C03",
+      "area": "Cloud (mock)",
+      "action": "Two devices: second device first sign-in, concurrent edits, dismiss, reload",
+      "expected": "Concurrent edits are merged or the user can choose which version to keep",
+      "observed": "B first sign-in banner=true; B load confirm=true; B local-only card kept after load=false; rev=2; B banner=true; B status=\"Neue Elemente auf einem anderen Gerät verfügbar\"; after dismiss+edit B uploaded=2 publish calls total; banner again=true; after B \"Aktualisieren\": B edits kept=false; single recovery slot present=true",
+      "status": "DEFECT",
+      "severity": "High",
+      "note": "Only two outcomes exist: replace local with cloud (single-slot recovery point) or keep diverging locally with uploads blocked. No merge, no \"keep mine/overwrite cloud\". Realtime channel is mocked as no-op; realtime delivery NOT VERIFIED.",
+      "ms": 11595
+    },
+    {
+      "id": "I-C04",
+      "area": "Cloud (mock)",
+      "action": "Sign out, then a different account signs in on the same browser profile",
+      "expected": "(Product decision) local board ownership on shared devices is explicit",
+      "observed": "local items kept after sign-out=14; same browser profile, next account signs in → previous local board uploaded to that account's cloud=true",
+      "status": "OBSERVATION",
+      "severity": "Medium",
+      "ms": 3302
+    },
+    {
+      "id": "I-C05",
+      "area": "Cloud (mock)",
+      "action": "Remote snapshot is applied while the \"Inhalt bearbeiten\" dialog is open on another device",
+      "expected": "Edit is preserved, or the user is warned before the remote state replaces the board",
+      "observed": "remote applied silently while dialog open=true; dialog still open=true; after \"Ablegen\": edit in local state=false; edit in cloud=false; toast=\"Gespeichert\"",
+      "status": "DEFECT",
+      "severity": "High",
+      "note": "Remote apply is triggered here via visibilitychange → cloudReconcile() (realtime mocked as no-op). Open dialogs hold references to item objects of the replaced state.",
+      "ms": 9036
+    }
+  ],
+  "externalHostsRequested": [
+    "fonts.googleapis.com",
+    "cdnjs.cloudflare.com",
+    "cdn.jsdelivr.net"
+  ],
+  "note": "All external hosts were intercepted: JSZip served from a local npm copy, Supabase replaced by an in-memory mock or blocked, Tesseract stubbed or blocked, fonts blocked."
+}

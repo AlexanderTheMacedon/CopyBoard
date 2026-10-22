@@ -34,7 +34,8 @@ CopyBoard stores the working board in the browser first. Cloud sync is optional 
 Current browser-side limits:
 
 - Maximum size per file: 8 MiB
-- Maximum estimated board size: 20 MiB
+- Maximum local board size: 4,500,000 characters of serialized JSON (about 4.3 MB), a conservative cap below typical browser localStorage quotas
+- If saving fails (quota, unreadable stored data, or a change from another tab), CopyBoard shows a persistent warning, stops accepting new content, and offers an export instead of reporting "saved"
 - Backups and transfers: CopyBoard JSON format
 
 Browser storage is device- and browser-profile-specific. Export a JSON backup before clearing site data or moving critical content.

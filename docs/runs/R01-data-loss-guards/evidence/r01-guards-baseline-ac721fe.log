@@ -1,0 +1,33 @@
+A1 [FAIL] Gespeicherter State: schemaVersion:2 — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=false, 5s=false, Reload=false; Hinweis=false/false ""; Paste abgelehnt=false (Toast ""); Export=Original: false (99 Zeichen); Status="Gespeichert um 22:40:03"; Cloud-Operationen=9 (Schreibend 5)
+A2 [FAIL] Gespeicherter State: abgeschnittenes JSON — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=false, 5s=false, Reload=false; Hinweis=false/false ""; Paste abgelehnt=false (Toast ""); Export=Original: false (99 Zeichen); Status="Gespeichert um 22:40:14"; Cloud-Operationen=9 (Schreibend 5)
+A2b [FAIL] Gespeicherter State: settings.schemaVersion:2 — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=false, 5s=false, Reload=false; Hinweis=false/false ""; Paste abgelehnt=false (Toast ""); Export=Original: false (99 Zeichen); Status="Gespeichert um 22:40:24"; Cloud-Operationen=9 (Schreibend 5)
+A2c [FAIL] Gespeicherter State: JSON-Array statt Objekt — Start, 5 s, Paste-Versuch, Rohdaten-Export, Reload
+    → identisch: Start=false, 5s=false, Reload=false; Hinweis=false/false ""; Paste abgelehnt=false (Toast ""); Export=Original: false (99 Zeichen); Status="Gespeichert um 22:40:35"; Cloud-Operationen=9 (Schreibend 5)
+A3 [FAIL] Rausch-PNGs bis zur Grenze: Ablehnung vor dem Fehlschlag, Kartenzahl UI = gespeichert = nach Reload
+    → #1: Karten 1, Status "Gespeichert um 22:40:41", Toast ""; #2: Karten 2, Status "Gespeichert um 22:40:42", Toast ""; #3: Karten 3, Status "Speichern fehlgeschlagen", Toast "Konnte nicht gespeichert werden (Speicherlimit erreicht?)"; #4: Karten 4, Status "Speichern fehlgeschlagen", Toast "Konnte nicht gespeichert werden (Speicherlimit erreicht?)"; abgelehnt bei Bild null; Speichern je fehlgeschlagen=true; UI=4, gespeichert=2 (3924041 Zeichen), nach Reload=2
+A3b [FAIL] Echter Quota-Fehler (Speicher künstlich verknappt): dauerhafter Hinweis, kein "Gespeichert", Erfassung gesperrt, RAM-Export rettet
+    → Harness-/Testfehler: page.click: Timeout 3000ms exceeded.
+A4 [FAIL] Wie A3b, dann gespeicherte Karte löschen: verifizierter Save hebt Sperre auf, Erfassung wieder möglich
+    → Hinweis nach Löschen=false; Status="Gespeichert um 22:40:52"; gespeichert: zuvor ungespeichertes Bild übernommen=false; neuer Paste gespeichert=true; UI=3, nach Reload=3
+S1 [FAIL] Schreiben von copyboard_autosave_last_saved scheitert, State-Write gelingt
+    → State gespeichert=true; Status="Speichern fehlgeschlagen"; Sperr-Hinweis=false
+A5 [FAIL] Board mit 3,3 M Zeichen, Backup-Import, Recovery-Kopie passt nicht in den Speicher
+    → Board 3301172 Zeichen; nach Import byte-identisch=false; UI zeigt alten Stand=false; Recovery-Key vorhanden=false; Toast="Board importiert"
+A5b [FAIL] Manuelles "Aktualisieren" bei lokalen Änderungen, Recovery-Kopie passt nicht
+    → Update-Banner=true; lokal byte-identisch=false; lokale Änderung erhalten=false; Toast="Neuer Cloud-Stand geladen"; Cloud-Revision=2; Cloud-Schreibops danach=[]
+A6 [FAIL] Mock-Snapshot 6,3 M Zeichen, leeres Gerät, danach Reload
+    → Status Start="synced / Synchronisiert"; nach Reload="synced / Synchronisiert"; lokale Cloud-Meta={"revision":1,"contentHash":"8ec16bc5a92868e91ad167e04dc53fdfe021afaf08aafad36a0ac3493c234bce","objectPath":"00000000-0000-4000-8000-0000000000aa/snapshots/1-device-other.json","savedAt":1792615263183}; lokaler State 425 Zeichen; Backend-Revision=2; Originalobjekt vorhanden=false; Cloud-Schreibops=["upload","rpc","remove"]
+A6b [FAIL] Synchronisiertes Gerät, neuer Cloud-Stand (3 M) passt nicht in den verknappten Speicher → Rollback
+    → vor Reload {"localSame":true,"metaSame":false,"ui":false,"banner":false,"st":"synced / Synchronisiert"}; nach Reload {"localSame":true,"metaSame":false,"ui":true,"banner":false,"st":"synced / Synchronisiert"}; Backend-Revision=3; Objekt rev2 vorhanden=false; Cloud-Schreibops=["upload","rpc","remove"]; Füller=4515296 Zeichen
+A7 [FAIL] Gescheiterter Save, dann "Jetzt synchronisieren"
+    → Autosave-Status="Speichern fehlgeschlagen"; Sperr-Hinweis=false; Revision 1→2; Cloud-Schreibops=["upload","rpc","remove"]; Sync-Status="Synchronisiert"
+A8 [FAIL] Zwei Tabs, sequenziell: Tab A speichert, dann Paste im veralteten Tab B; danach Neu laden
+    → B gesperrt nach Write von A=false; Karte A erhalten=false; veralteter Paste in B gespeichert=true
+A8r [RISK] Zwei Tabs, gleichzeitig (5 Durchläufe): echte Schreibrennen
+    → #1: gespeichert A/B=false/true, gesperrt A/B=false/false STILL VERLOREN; #2: gespeichert A/B=false/true, gesperrt A/B=false/false STILL VERLOREN; #3: gespeichert A/B=false/true, gesperrt A/B=false/false STILL VERLOREN; #4: gespeichert A/B=true/false, gesperrt A/B=false/false STILL VERLOREN; #5: gespeichert A/B=true/false, gesperrt A/B=false/false STILL VERLOREN; Durchläufe mit nicht gespeicherter Karte: 5/5
+A10 [PASS] node --check für alle Module
+    → src/js/app.js: ok; src/js/config/constants.js: ok; src/js/ui/toast.js: ok; src/js/utils/files.js: ok; src/js/utils/format.js: ok
+written <local>/evidence/r01-results-baseline-ac721fe.json

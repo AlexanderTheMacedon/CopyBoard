@@ -1115,9 +1115,14 @@
   #cloudUpdateBanner span{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #cloudUpdateBanner button{border:none;border-radius:999px;background:var(--accent);color:#fff;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer}
   #cloudUpdateDismiss{background:#f0f1f4!important;color:var(--muted)!important;padding:7px 9px!important}
+  #persistBlockedBanner{position:fixed;top:88px;left:50%;z-index:77;transform:translateX(-50%);display:flex;align-items:center;gap:10px;width:max-content;max-width:min(640px,calc(100vw - 32px));box-sizing:border-box;padding:10px 12px 10px 15px;border-radius:18px;background:#fff;color:var(--ink);border:2px solid var(--danger);box-shadow:0 16px 42px rgba(0,0,0,.35)}
+  #persistBlockedBanner[hidden]{display:none}
+  #persistBlockedBanner span{font-size:12.5px;font-weight:700;line-height:1.35}
+  #persistBlockedBanner button{flex:none;border:none;border-radius:999px;background:var(--accent);color:#fff;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer}
   @media (max-width:520px){
     #cloudToggle{left:84px}
     #cloudUpdateBanner{top:122px}
+    #persistBlockedBanner{top:122px;flex-wrap:wrap}
     #cloudUpdateBanner span{white-space:normal}
     #cloudOverlay{padding:12px}
     .cloud-modal{max-height:calc(100dvh - 24px);padding:20px}
