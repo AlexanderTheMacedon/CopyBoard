@@ -2833,7 +2833,8 @@ import { showToast } from './ui/toast.js';
     let count = 0;
     for(const id of folder.itemIds){
       const it = data.items[id];
-      if(!it || it.type==='folder') continue;
+      // Locked cards stay out of the ZIP: their plaintext is not available without the PIN (I-25).
+      if(!it || it.type==='folder' || it.locked) continue;
       const blob = it.type === 'text' ? null : dataUrlToBlob(it.data, it.mime);
       if(it.type !== 'text' && !blob) continue;
       const filename = exportFilename(it, used);
@@ -2868,6 +2869,7 @@ import { showToast } from './ui/toast.js';
   }
   async function nativeShare(item){
     closeShare();
+    if(!contentAccessAllowed(item) || unlockedViews.has(item)) return;
     try{
       if(item.type === 'folder'){
         showToast('ZIP wird für die Freigabe erstellt…');
@@ -2888,6 +2890,7 @@ import { showToast } from './ui/toast.js';
     }
   }
   function openShareSheet(item){
+    if(!contentAccessAllowed(item) || unlockedViews.has(item)) return;
     const isFolder = item.type === 'folder';
     shareOptions.innerHTML = '';
     const rows = [];
@@ -3275,7 +3278,7 @@ import { showToast } from './ui/toast.js';
     document.removeEventListener('pointerdown',session.outsideHandler,true);
     const nextValue=session.textarea.value;
     session.card.classList.remove('inline-editing');
-    if(saveChanges && nextValue!==session.original){
+    if(saveChanges && nextValue!==session.original && !isLockedItem(session.item)){
       mutationCheckpoint('content', currentSpaceId);
       session.item.data=nextValue;
       session.item.size=new Blob([nextValue]).size;
@@ -3734,6 +3737,7 @@ import { showToast } from './ui/toast.js';
     });
   }
   async function copyItem(item){
+    if(!contentAccessAllowed(item)) return;
     try{
       if(item.type === 'text'){ await navigator.clipboard.writeText(item.data); markRecent(item,'copy'); showToast('Text kopiert'); }
       else if(item.type === 'image'){
@@ -3749,7 +3753,7 @@ import { showToast } from './ui/toast.js';
     }catch(e){ showToast('Kopieren fehlgeschlagen — nutze Herunterladen in der Vorschau'); }
   }
   function downloadItem(item){
-    if(item.type==='folder') return;
+    if(item.type==='folder' || !contentAccessAllowed(item)) return;
     if(item.type==='text'){ downloadBlob(new Blob([item.data ?? ''], {type:'text/plain'}), (displayName(item)||'text')+'.txt'); return; }
     // Files always download from a local Blob; the stored reference is never used as a link target.
     const blob = dataUrlToBlob(item.data, item.mime);
@@ -3758,6 +3762,9 @@ import { showToast } from './ui/toast.js';
   }
 
   function openPreview(item){
+    // Card button, quick look, search, inspector, storage, recent and duplicate lists all open previews here.
+    if(isLockedItem(item)){ previewLockedItem(item); return; }
+    const readOnly = unlockedViews.has(item);
     markRecent(item,'open');
     previewName.textContent = displayName(item);
     previewBody.innerHTML = '';
@@ -3788,7 +3795,13 @@ import { showToast } from './ui/toast.js';
     });
     const dlBtn = document.createElement('button'); dlBtn.style.background='#f4f5f7'; dlBtn.style.color='var(--ink)';
     dlBtn.innerHTML = ICONS.download+' Herunterladen'; dlBtn.addEventListener('click', ()=>downloadItem(item));
-    previewFooter.appendChild(shareBtn); previewFooter.appendChild(copyBtn); previewFooter.appendChild(editBtn); previewFooter.appendChild(dlBtn);
+    if(readOnly){
+      // PIN-unlocked view: plaintext copy outside the board, so no editing and no sharing into other spaces.
+      editBtn.disabled = true; editBtn.title = 'Bearbeiten erst nach „PIN entfernen“ möglich';
+      previewFooter.appendChild(copyBtn); previewFooter.appendChild(editBtn); previewFooter.appendChild(dlBtn);
+    } else {
+      previewFooter.appendChild(shareBtn); previewFooter.appendChild(copyBtn); previewFooter.appendChild(editBtn); previewFooter.appendChild(dlBtn);
+    }
     previewOverlay.classList.add('show');
   }
   function closePreview(){
@@ -4761,6 +4774,7 @@ import { showToast } from './ui/toast.js';
   let editImageState = { rotation:0, flipH:false, flipV:false, img:null };
 
   function openEditContent(item, ctx){
+    if(!contentEditAllowed(item)) return;
     if(item.type === 'text'){
       editTextContext = { item, ctx };
       textOverlayTitle.textContent = 'Inhalt bearbeiten';
@@ -4785,6 +4799,7 @@ import { showToast } from './ui/toast.js';
     textOverlay.classList.remove('show');
     if(editTextContext){
       const { item, ctx } = editTextContext;
+      if(isLockedItem(item)){ editTextContext = null; textOverlayTitle.textContent = 'Zwischenablage einfügen'; showToast('Text nicht übernommen · Karte ist PIN-geschützt'); return; }
       mutationCheckpoint('content', currentSpaceId);
       item.data = val;
       item.size = new Blob([val]).size;
@@ -4826,6 +4841,7 @@ import { showToast } from './ui/toast.js';
   imageEditSaveBtn.addEventListener('click', ()=>{
     if(!editImageContext) return;
     const { item, ctx } = editImageContext;
+    if(isLockedItem(item)){ imageEditOverlay.classList.remove('show'); editImageContext = null; showToast('Bild nicht übernommen · Karte ist PIN-geschützt'); return; }
     mutationCheckpoint('content', currentSpaceId);
     const dataUrl = imageEditCanvas.toDataURL(item.mime && item.mime.includes('png') ? 'image/png' : 'image/jpeg', 0.92);
     item.data = dataUrl;
@@ -4846,6 +4862,7 @@ import { showToast } from './ui/toast.js';
     if(file.size > MAX_FILE_BYTES){ showToast(`"${file.name}" ist zu groß (max. ${fmtSize(MAX_FILE_BYTES)})`); return; }
     const { item, ctx } = editContextForReplace;
     editContextForReplace = null;
+    if(isLockedItem(item)){ showToast('Datei nicht übernommen · Karte ist PIN-geschützt'); return; }
     try{
       const dataUrl = await fileToDataURL(file);
       mutationCheckpoint('content', currentSpaceId);
@@ -4926,6 +4943,7 @@ import { showToast } from './ui/toast.js';
   }
   let currentPaletteColors = [];
   async function openPaletteExtract(item){
+    if(!contentAccessAllowed(item)) return;
     let colors;
     try{ colors = await extractPalette(item, 6); }catch(e){ showToast('Farbpalette konnte nicht erstellt werden'); return; }
     currentPaletteColors = colors;
@@ -4947,6 +4965,7 @@ import { showToast } from './ui/toast.js';
 
   // ================= OCR =================
   async function runOcr(item){
+    if(!contentAccessAllowed(item)) return;
     if(typeof Tesseract === 'undefined'){ showToast('OCR nicht verfügbar (kein Internet?)'); return; }
     showToast('Texterkennung läuft…');
     try{
@@ -4976,8 +4995,33 @@ import { showToast } from './ui/toast.js';
   pinInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') resolvePin(pinInput.value); });
   pinOverlay.addEventListener('click', (e)=>{ if(e.target===pinOverlay) resolvePin(null); });
 
+  // ================= ACCESS POLICY FOR LOCKED CARDS =================
+  // One rule for every content entry point (preview, quick look, search, inspector, menus, editors):
+  // a locked card exposes no content without its PIN, and the plaintext copy shown after PIN entry is read-only.
+  const unlockedViews = new WeakSet();
+  function isLockedItem(item){ return !!item && item.locked === true; }
+  // Identity, not id: imported spaces may repeat item ids across spaces.
+  function isBoardItem(item){ return !!item && Object.values(state.data || {}).some(d=>d?.items?.[item.id] === item); }
+  function contentAccessAllowed(item){
+    if(!item) return false;
+    if(isLockedItem(item)){ showToast('Karte ist PIN-geschützt'); return false; }
+    return true;
+  }
+  function contentEditAllowed(item){
+    if(!contentAccessAllowed(item)) return false;
+    if(unlockedViews.has(item)){ showToast('Bearbeiten erst nach „PIN entfernen“ möglich'); return false; }
+    if(!isBoardItem(item)){ showToast('Bearbeiten nicht möglich · Karte ist nicht mehr im Board'); return false; }
+    return true;
+  }
+
   // ================= PIN-PROTECTED CARDS (Web Crypto AES-GCM) =================
-  function bufToBase64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+  // Chunked: spreading a large buffer into String.fromCharCode overflows the call stack (N2). Output is unchanged.
+  function bufToBase64(buf){
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for(let i=0;i<bytes.length;i+=0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i+0x8000));
+    return btoa(bin);
+  }
   function base64ToBuf(b64){ const bin=atob(b64); const arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i); return arr.buffer; }
   async function deriveKey(pin, saltBytes){
     const enc = new TextEncoder();
@@ -4987,63 +5031,92 @@ import { showToast } from './ui/toast.js';
       keyMaterial, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
     );
   }
-  async function encryptItemWithPin(item, pin){
+  // Format unchanged: AES-GCM-256, PBKDF2-SHA-256 × 150 000, base64 {cipher, iv, salt}, PIN bytes as typed.
+  // Returns the encrypted payload without touching the card, so a failure cannot leave it half-locked.
+  async function encryptPayloadWithPin(plain, pin){
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const key = await deriveKey(pin, salt);
-    const plainBuf = new TextEncoder().encode(item.data);
+    const plainBuf = new TextEncoder().encode(plain);
     const cipherBuf = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, plainBuf);
-    item.encData = { cipher:bufToBase64(cipherBuf), iv:bufToBase64(iv), salt:bufToBase64(salt) };
-    item.lockedType = item.type;
-    item.data = null;
-    item.locked = true;
+    return { cipher:bufToBase64(cipherBuf), iv:bufToBase64(iv), salt:bufToBase64(salt) };
   }
+  // Rejects with 'PIN_WRONG' (authentication failed) or 'PIN_DATA_INVALID' (missing or corrupt payload).
   async function decryptItemWithPin(item, pin){
-    const salt = new Uint8Array(base64ToBuf(item.encData.salt));
-    const iv = new Uint8Array(base64ToBuf(item.encData.iv));
+    let salt, iv, cipherBuf;
+    try{
+      salt = new Uint8Array(base64ToBuf(item.encData.salt));
+      iv = new Uint8Array(base64ToBuf(item.encData.iv));
+      cipherBuf = base64ToBuf(item.encData.cipher);
+    }catch(e){ throw new Error('PIN_DATA_INVALID'); }
     const key = await deriveKey(pin, salt);
-    const cipherBuf = base64ToBuf(item.encData.cipher);
-    const plainBuf = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, cipherBuf);
+    let plainBuf;
+    try{ plainBuf = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, cipherBuf); }
+    catch(e){ throw new Error(e && e.name === 'OperationError' ? 'PIN_WRONG' : 'PIN_DATA_INVALID'); }
     return new TextDecoder().decode(plainBuf);
   }
+  function showPinError(e){
+    if(e && e.message === 'PIN_WRONG') showToast('Falscher PIN');
+    else { console.warn('CopyBoard: Entschlüsselung fehlgeschlagen.', e); showToast('Entschlüsselung fehlgeschlagen · PIN-Daten sind beschädigt oder unvollständig'); }
+  }
+  function pinCryptoAvailable(){
+    if(typeof crypto !== 'undefined' && crypto.subtle) return true;
+    showToast('PIN-Schutz hier nicht verfügbar');
+    return false;
+  }
   async function lockItemWithPin(item, ctx){
-    if(typeof crypto === 'undefined' || !crypto.subtle){ showToast('PIN-Schutz hier nicht verfügbar'); return; }
+    if(!pinCryptoAvailable()) return;
+    if(!contentEditAllowed(item)) return;
     const pin = await askPin('PIN festlegen');
     if(!pin){ return; }
     const confirmPin = await askPin('PIN bestätigen');
     if(confirmPin !== pin){ showToast('PINs stimmen nicht überein'); return; }
+    const plain = item.data;
+    let encData;
+    try{ encData = await encryptPayloadWithPin(plain, pin); }
+    catch(e){ console.warn('CopyBoard: Verschlüsselung fehlgeschlagen.', e); showToast('Sperren fehlgeschlagen · Karte bleibt unverändert'); return; }
+    // The card may have changed or left the board while PBKDF2 was running.
+    if(isLockedItem(item) || item.data !== plain || !isBoardItem(item)){ showToast('Sperren abgebrochen · Karte wurde inzwischen geändert'); return; }
+    const lockedItem = { ...item, encData, lockedType:item.type, data:null, locked:true };
+    if(stateChars(state) - stateChars(item) + stateChars(lockedItem) > MAX_LOCAL_STATE_CHARS){
+      showToast('Sperren nicht möglich · verschlüsselte Karte passt nicht in den lokalen Speicher'); return;
+    }
     mutationCheckpoint('content', currentSpaceId);
-    await encryptItemWithPin(item, pin);
-    persistState();
+    Object.assign(item, { encData, lockedType:item.type, data:null, locked:true });
     if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
-    showToast('Karte gesperrt');
+    showEditSaveToast('PIN-Sperre', item);
   }
   async function previewLockedItem(item){
+    if(!pinCryptoAvailable()) return;
     const pin = await askPin('PIN eingeben');
     if(!pin) return;
-    try{
-      const plain = await decryptItemWithPin(item, pin);
-      const virtual = { ...item, type:item.lockedType, data:plain, locked:false };
-      openPreview(virtual);
-    }catch(e){ showToast('Falscher PIN'); }
+    let plain;
+    try{ plain = await decryptItemWithPin(item, pin); }
+    catch(e){ showPinError(e); return; }
+    const view = { ...item, type:item.lockedType || item.type, data:plain };
+    delete view.locked; delete view.encData; delete view.lockedType;
+    unlockedViews.add(view);
+    openPreview(view);
   }
   async function unlockItemPermanently(item, ctx){
+    if(!isLockedItem(item) || !pinCryptoAvailable()) return;
     const pin = await askPin('PIN zum Entsperren eingeben');
     if(!pin) return;
-    try{
-      const plain = await decryptItemWithPin(item, pin);
-      mutationCheckpoint('content', currentSpaceId);
-      item.type = item.lockedType;
-      item.data = plain;
-      delete item.locked; delete item.encData; delete item.lockedType;
-      persistState();
-      if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
-      showToast('Entsperrt');
-    }catch(e){ showToast('Falscher PIN'); }
+    let plain;
+    try{ plain = await decryptItemWithPin(item, pin); }
+    catch(e){ showPinError(e); return; }
+    if(!isLockedItem(item) || !isBoardItem(item)){ showToast('Entsperren abgebrochen · Karte wurde inzwischen geändert'); return; }
+    mutationCheckpoint('content', currentSpaceId);
+    item.type = item.lockedType || item.type;
+    item.data = plain;
+    delete item.locked; delete item.encData; delete item.lockedType;
+    if(ctx && ctx.insideFolder){ renderFolderGrid(); } else { refreshItems(); render(); }
+    showEditSaveToast('Entsperrung', item);
   }
 
   // ================= BURN-AFTER-READING LINK =================
   function createBurnLink(item){
+    if(!contentAccessAllowed(item)) return;
     try{
       const encoded = btoa(unescape(encodeURIComponent(item.data)));
       const url = location.href.split('#')[0] + '#burn=' + encoded;
